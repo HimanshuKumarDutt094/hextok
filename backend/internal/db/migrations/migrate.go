@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/HimanshuKumarDutt094/hextok/db"
+	"github.com/HimanshuKumarDutt094/hextok/internal/db"
 )
 
 func Migrate() {

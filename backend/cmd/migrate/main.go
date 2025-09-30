@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/HimanshuKumarDutt094/hextok/db"
+	"github.com/HimanshuKumarDutt094/hextok/internal/db"
+	"github.com/HimanshuKumarDutt094/hextok/internal/platform"
 )
 
 func main() {
@@ -18,7 +19,7 @@ func main() {
 	}
 	defer d.Close()
 
-	repo := db.NewRepo(d)
+	repo := platform.NewUserStore(d)
 	ctx := context.Background()
 	if _, err := repo.CreateUser(ctx, "himanshu"); err != nil {
 		log.Fatal(err)
