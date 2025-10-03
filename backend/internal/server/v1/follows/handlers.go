@@ -2,6 +2,9 @@ package follows
 
 import (
 	"encoding/json"
+	"errors"
+	"io"
+	"log"
 	"net/http"
 
 	"github.com/HimanshuKumarDutt094/hextok/internal/platform"
@@ -28,6 +31,16 @@ func (h *Handler) FollowUserHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 	err = dec.Decode(&struct{}{})
+	if !errors.Is(err, io.EOF) {
+		http.Error(w, "Request body must only contain a single JSON object", http.StatusBadRequest)
+		return
+	}
+
+	// 6. At this point, decoding was successful. You can now use the populated struct.
+	log.Printf("Successfully decoded user: %+v", u)
+
+	// Send a success response.
+	w.WriteHeader(http.StatusOK)
 
 }
 

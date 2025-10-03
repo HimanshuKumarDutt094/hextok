@@ -20,7 +20,7 @@ func NewSessionStore(db *sql.DB) *SessionStore {
 
 var _ domains.SessionRepo = (*SessionStore)(nil)
 
-func (r *SessionStore) CreateSession(ctx context.Context, userId int64, secretHash []byte) (int64, error) {
+func (r *SessionStore) CreateSession(ctx context.Context, userId int64, secretHash string) (int64, error) {
 	var id int64
 	// store secretHash as TEXT (you may use base64 encoding if binary)
 	query := `INSERT INTO session (userId, secretHash, createdAt, lastVerifiedAt)
