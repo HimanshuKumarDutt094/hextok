@@ -11,7 +11,6 @@ type LikeStore struct {
 	DB *sql.DB
 }
 
-// 2. Create a specific constructor for this store.
 func NewLikeStore(db *sql.DB) *LikeStore {
 	return &LikeStore{DB: db}
 }

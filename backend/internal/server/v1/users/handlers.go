@@ -4,13 +4,26 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/HimanshuKumarDutt094/hextok/internal/domains"
+	"github.com/HimanshuKumarDutt094/hextok/internal/server/middlewares"
 	"github.com/HimanshuKumarDutt094/hextok/internal/server/schema"
 )
+
+type Handler struct {
+	userStore    domains.UserRepo
+	sessionStore domains.SessionRepo
+}
+
+func NewHandler(u domains.UserRepo, s domains.SessionRepo) *Handler {
+	return &Handler{userStore: u, sessionStore: s}
+}
 
 func (h *Handler) handleGetAllUsers(w http.ResponseWriter, r *http.Request) {
 	res, err := h.userStore.GetAllUser(r.Context())
 	if err != nil {
-		http.Error(w, "failed to get users ", http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(schema.ErrorResponse{Error: "failed to get users"})
 		return
 	}
 	users := make([]schema.UserResponse, 0, len(res))
@@ -22,20 +35,40 @@ func (h *Handler) handleGetAllUsers(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(users); err != nil {
-		http.Error(w, "failed to encode response", http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(schema.ErrorResponse{Error: "failed to encode response"})
 		return
 	}
 
 }
 
-// handleGetUserProfile returns profile for a specific user (stub).
 func (h *Handler) handleGetUserProfile(w http.ResponseWriter, r *http.Request) {
-	// In a real implementation parse id from URL path, fetch user, liked hexes, followers, following
-	w.WriteHeader(http.StatusNotImplemented)
+	w.Header().Set("Content-Type", "application/json")
+	userId, ok := middlewares.GetAuthedUserID(r.Context())
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		_ = json.NewEncoder(w).Encode(schema.ErrorResponse{Error: "unauthorized"})
+		return
+	}
+	res, err := h.userStore.GetUserById(r.Context(), userId)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		_ = json.NewEncoder(w).Encode(schema.ErrorResponse{Error: "user not found"})
+		return
+	}
+	user := schema.UserResponse{
+		ID:       res.Id,
+		UserName: res.UserName,
+	}
+	if err := json.NewEncoder(w).Encode(user); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(schema.ErrorResponse{Error: "encoding failed"})
+		return
+	}
 }
 
-// handleMe returns the current authenticated user (stub).
 func (h *Handler) handleMe(w http.ResponseWriter, r *http.Request) {
-	// In a real implementation read session/auth from request and return user
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNotImplemented)
+	_ = json.NewEncoder(w).Encode(schema.ErrorResponse{Error: "not implemented"})
 }

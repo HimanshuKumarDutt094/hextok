@@ -34,7 +34,7 @@ type Handler struct {
 	OauthRepo    domains.OauthRepo
 	SessionRepo  domains.SessionRepo
 	HTTPClient   *http.Client
-	stateKey     []byte // HMAC key for state signing
+	stateKey     []byte
 	clientID     string
 	clientSecret string
 	baseURL      string
@@ -45,7 +45,10 @@ func NewHandler(u domains.UserRepo, o domains.OauthRepo, s domains.SessionRepo, 
 		httpClient = &http.Client{Timeout: 10 * time.Second}
 	}
 	key := []byte(os.Getenv("OAUTH_STATE_KEY"))
-	fmt.Println("envs are ", os.Getenv("GITHUB_CLIENT_ID"))
+
+	if os.Getenv("GITHUB_CLIENT_ID") == "" || os.Getenv("GITHUB_CLIENT_SECRET") == "" {
+		fmt.Println("warning: GITHUB_CLIENT_ID or GITHUB_CLIENT_SECRET is not set")
+	}
 	return &Handler{
 		UserRepo:     u,
 		OauthRepo:    o,
@@ -54,11 +57,10 @@ func NewHandler(u domains.UserRepo, o domains.OauthRepo, s domains.SessionRepo, 
 		stateKey:     key,
 		clientID:     os.Getenv("GITHUB_CLIENT_ID"),
 		clientSecret: os.Getenv("GITHUB_CLIENT_SECRET"),
-		baseURL:      os.Getenv("BASE_URL"), // e.g. http://localhost:8080
+		baseURL:      os.Getenv("BASE_URL"),
 	}
 }
 
-// GenerateState creates a base64-url nonce for state.
 func GenerateState() (string, error) {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
@@ -67,7 +69,6 @@ func GenerateState() (string, error) {
 	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
-// SetStateCookie signs state + ts and stores it in a cookie.
 func (h *Handler) SetStateCookie(w http.ResponseWriter, state string) {
 	ts := strconv.FormatInt(time.Now().Unix(), 10)
 	payload := state + "|" + ts
@@ -87,7 +88,6 @@ func (h *Handler) SetStateCookie(w http.ResponseWriter, state string) {
 	})
 }
 
-// ValidateState checks the cookie signature, timestamp TTL and matches provided state.
 func (h *Handler) ValidateState(r *http.Request, stateFromQuery string) error {
 	c, err := r.Cookie(stateCookieName)
 	if err != nil {
@@ -105,7 +105,6 @@ func (h *Handler) ValidateState(r *http.Request, stateFromQuery string) error {
 	tsStr := parts[1]
 	sigHex := parts[2]
 
-	// Recompute HMAC
 	payload := stateCookie + "|" + tsStr
 	mac := hmac.New(sha256.New, h.stateKey)
 	mac.Write([]byte(payload))
@@ -118,7 +117,6 @@ func (h *Handler) ValidateState(r *http.Request, stateFromQuery string) error {
 		return errors.New("state signature mismatch")
 	}
 
-	// timestamp check
 	tsInt, err := strconv.ParseInt(tsStr, 10, 64)
 	if err != nil {
 		return errors.New("bad state timestamp")
@@ -127,7 +125,6 @@ func (h *Handler) ValidateState(r *http.Request, stateFromQuery string) error {
 		return errors.New("state expired")
 	}
 
-	// compare state values constant-time
 	if subtle.ConstantTimeCompare([]byte(stateCookie), []byte(stateFromQuery)) != 1 {
 		return errors.New("state value mismatch")
 	}
@@ -145,7 +142,6 @@ func (h *Handler) ClearStateCookie(w http.ResponseWriter) {
 	})
 }
 
-// StartAuthHandler initiates the GitHub OAuth redirect (generates state cookie).
 func (h *Handler) StartAuthHandler(w http.ResponseWriter, r *http.Request) {
 	state, err := GenerateState()
 	if err != nil {
@@ -157,7 +153,6 @@ func (h *Handler) StartAuthHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, redir, http.StatusFound)
 }
 
-// GithubOAuthCallbackHandler handles GET /oauth/callback/github (mounted at /api/v1 when using the v1 mux)
 func (h *Handler) GithubOAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -171,17 +166,15 @@ func (h *Handler) GithubOAuthCallbackHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	// validate state, then clear to prevent replay
 	if err := h.ValidateState(r, state); err != nil {
 		h.ClearStateCookie(w)
-		// log validation error (do not include raw state)
+
 		fmt.Printf("oauth: state validation failed: %v\n", err)
 		http.Error(w, "invalid state", http.StatusForbidden)
 		return
 	}
 	h.ClearStateCookie(w)
 
-	// Exchange code for access token
 	accessToken, err := h.exchangeCodeForToken(r.Context(), code)
 	if err != nil {
 		fmt.Printf("oauth: token exchange failed: %v\n", err)
@@ -189,20 +182,19 @@ func (h *Handler) GithubOAuthCallbackHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	// Fetch GitHub user
 	ghID, ghLogin, err := h.fetchGithubUser(r.Context(), accessToken)
 	if err != nil {
 		http.Error(w, "failed to fetch github user", http.StatusBadGateway)
 		return
 	}
 	provider := "github"
-	// Find existing oauth row
+
 	oauthRow, err := h.OauthRepo.GetOauthByProviderUserID(r.Context(), provider, ghID)
 	var userId int64
 	if err == nil {
 		userId = oauthRow.UserId
 	} else {
-		// create user then oauth row
+
 		uid, err := h.UserRepo.CreateUser(r.Context(), ghLogin)
 		if err != nil {
 			fmt.Printf("oauth: CreateUser failed: %v\n", err)
@@ -212,13 +204,12 @@ func (h *Handler) GithubOAuthCallbackHandler(w http.ResponseWriter, r *http.Requ
 		userId = uid
 		if _, err := h.OauthRepo.CreateOauth(r.Context(), userId, provider, ghID, accessToken, ""); err != nil {
 			fmt.Printf("oauth: CreateOauth failed: %v\n", err)
-			// best-effort cleanup? for now return error
+
 			http.Error(w, "failed to create oauth row", http.StatusInternalServerError)
 			return
 		}
 	}
 
-	// Create app session: raw token -> hash stored
 	rawTok, err := generateRandomToken(sessionTokLen)
 	if err != nil {
 		http.Error(w, "failed to create session token", http.StatusInternalServerError)
@@ -233,7 +224,7 @@ func (h *Handler) GithubOAuthCallbackHandler(w http.ResponseWriter, r *http.Requ
 		http.Error(w, "failed to create session", http.StatusInternalServerError)
 		return
 	}
-	// Set session cookie (id|rawTok) base64-encoded
+
 	sessionVal := fmt.Sprintf("%d|%s", sid, rawTok)
 	enc := base64.RawURLEncoding.EncodeToString([]byte(sessionVal))
 	http.SetCookie(w, &http.Cookie{
@@ -243,10 +234,9 @@ func (h *Handler) GithubOAuthCallbackHandler(w http.ResponseWriter, r *http.Requ
 		Secure:   true,
 		Path:     "/",
 		SameSite: http.SameSiteLaxMode,
-		MaxAge:   60 * 60 * 24 * 30, // 30 days; change if you want shorter
+		MaxAge:   60 * 60 * 24 * 30,
 	})
 
-	// Redirect to frontend or return small JSON; here redirect home
 	http.Redirect(w, r, h.baseURL+"/", http.StatusFound)
 }
 
@@ -309,16 +299,15 @@ func generateRandomToken(n int) (string, error) {
 	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
-// LogoutHandler reads session cookie, verifies and deletes session.
 func (h *Handler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	c, err := r.Cookie(sessionCookieName)
 	if err != nil {
-		// No session cookie, still clear and return success
+
 		http.SetCookie(w, &http.Cookie{Name: sessionCookieName, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, Secure: true})
 		w.WriteHeader(http.StatusOK)
 		return
 	}
-	// parse
+
 	raw, err := base64.RawURLEncoding.DecodeString(c.Value)
 	if err != nil {
 		http.SetCookie(w, &http.Cookie{Name: sessionCookieName, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, Secure: true})
@@ -333,10 +322,10 @@ func (h *Handler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	sid, err := strconv.ParseInt(parts[0], 10, 64)
 	if err == nil {
-		// delete session row (best-effort)
+
 		_ = h.SessionRepo.DeleteSession(r.Context(), sid)
 	}
-	// clear cookie
+
 	http.SetCookie(w, &http.Cookie{Name: sessionCookieName, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, Secure: true})
 	w.WriteHeader(http.StatusOK)
 }

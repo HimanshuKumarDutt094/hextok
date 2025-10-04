@@ -42,7 +42,6 @@ type OauthRepo interface {
 	GetOauthsByUser(ctx context.Context, userId int64) ([]Oauth, error)
 }
 
-// SessionRepo manages session records.
 type SessionRepo interface {
 	CreateSession(ctx context.Context, userId int64, secretHash string) (int64, error)
 	GetSessionById(ctx context.Context, id int64) (Session, error)

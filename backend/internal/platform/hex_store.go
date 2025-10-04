@@ -11,7 +11,6 @@ type HexStore struct {
 	DB *sql.DB
 }
 
-// 2. Create a specific constructor for this store.
 func NewHexStore(db *sql.DB) *HexStore {
 	return &HexStore{DB: db}
 }

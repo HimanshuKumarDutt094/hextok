@@ -11,7 +11,6 @@ type FollowStore struct {
 	DB *sql.DB
 }
 
-// 2. Create a specific constructor for this store.
 func NewFollowStore(db *sql.DB) *FollowStore {
 	return &FollowStore{DB: db}
 }

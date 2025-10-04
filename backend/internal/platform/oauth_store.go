@@ -1,4 +1,3 @@
-// ...existing code...
 package platform
 
 import (
@@ -12,7 +11,6 @@ type OauthStore struct {
 	DB *sql.DB
 }
 
-// 2. Create a specific constructor for this store.
 func NewOauthStore(db *sql.DB) *OauthStore {
 	return &OauthStore{DB: db}
 }

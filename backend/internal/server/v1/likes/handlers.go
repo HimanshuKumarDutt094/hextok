@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/HimanshuKumarDutt094/hextok/internal/domains"
+	"github.com/HimanshuKumarDutt094/hextok/internal/server/middlewares"
+	"github.com/HimanshuKumarDutt094/hextok/internal/server/schema"
 )
 
 type Handler struct {
@@ -19,86 +21,89 @@ func NewHandler(h domains.HexRepo, l domains.LikeRepo, s domains.SessionRepo) *H
 	return &Handler{hexStore: h, likeStore: l, sessionStore: s}
 }
 
-type HexResponse struct {
-	Id       int64  `json:"id"`
-	HexValue string `json:"hexValue"`
-}
-
-// LikeHexHandler handles liking a hex.
 func (h *Handler) LikeHexHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	userId, ok := r.Context().Value("authedUserId").(int64)
+	userId, ok := middlewares.GetAuthedUserID(r.Context())
 	if !ok {
-		http.Error(w, "Invalid user ID in context", http.StatusBadRequest)
+		w.WriteHeader(http.StatusUnauthorized)
+		_ = json.NewEncoder(w).Encode(schema.ErrorResponse{Error: "unauthorized"})
 		return
 	}
 	idStr := strings.TrimPrefix(r.URL.Path, "/likes/like/")
-	if len(idStr) == 0 {
-		http.Error(w, "no id povided", http.StatusBadRequest)
+	if len(idStr) == 0 || idStr == r.URL.Path {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(schema.ErrorResponse{Error: "no id provided"})
 		return
 	}
 	hexId, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		http.Error(w, "id failed to parse", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(schema.ErrorResponse{Error: "invalid id"})
 		return
 	}
-	err = h.likeStore.AddLike(r.Context(), userId, hexId)
-	if err != nil {
-		http.Error(w, "id failed to parse", http.StatusInternalServerError)
+	if err := h.likeStore.AddLike(r.Context(), userId, hexId); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(schema.ErrorResponse{Error: "failed to add like"})
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(schema.OkResponse{Message: "liked"})
 }
 
-// UnlikeHexHandler handles unliking a hex.
 func (h *Handler) UnlikeHexHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	userId, ok := r.Context().Value("authedUserId").(int64)
+	userId, ok := middlewares.GetAuthedUserID(r.Context())
 	if !ok {
-		http.Error(w, "Invalid user ID in context", http.StatusBadRequest)
+		w.WriteHeader(http.StatusUnauthorized)
+		_ = json.NewEncoder(w).Encode(schema.ErrorResponse{Error: "unauthorized"})
 		return
 	}
 	idStr := strings.TrimPrefix(r.URL.Path, "/likes/unlike/")
-	if len(idStr) == 0 {
-		http.Error(w, "no id povided", http.StatusBadRequest)
+	if len(idStr) == 0 || idStr == r.URL.Path {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(schema.ErrorResponse{Error: "no id provided"})
 		return
 	}
 	hexId, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		http.Error(w, "id failed to parse", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(schema.ErrorResponse{Error: "invalid id"})
 		return
 	}
-	err = h.likeStore.RemoveLike(r.Context(), userId, hexId)
-	if err != nil {
-		http.Error(w, "id failed to parse", http.StatusInternalServerError)
+	if err := h.likeStore.RemoveLike(r.Context(), userId, hexId); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(schema.ErrorResponse{Error: "failed to remove like"})
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(schema.OkResponse{Message: "unliked"})
 }
 
-// GetUserLikedHexesHandler returns liked hexes for a user.
 func (h *Handler) GetUserLikedHexesHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	userId, ok := r.Context().Value("authedUserId").(int64)
+	userId, ok := middlewares.GetAuthedUserID(r.Context())
 	if !ok {
-		http.Error(w, "Invalid user ID in context", http.StatusBadRequest)
+		w.WriteHeader(http.StatusUnauthorized)
+		_ = json.NewEncoder(w).Encode(schema.ErrorResponse{Error: "unauthorized"})
 		return
 	}
 
 	res, err := h.likeStore.GetLikedHexesByUser(r.Context(), userId)
 	if err != nil {
-		http.Error(w, "id failed to parse", http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(schema.ErrorResponse{Error: "failed to fetch liked hexes"})
 		return
 	}
-	hexRs := make([]HexResponse, 0, len(res))
+	hexRs := make([]schema.HexResponse, 0, len(res))
 	for _, v := range res {
-		hexRs = append(hexRs, HexResponse{
+		hexRs = append(hexRs, schema.HexResponse{
 			Id:       v.Id,
 			HexValue: v.HexValue,
 		})
 	}
 	if err := json.NewEncoder(w).Encode(hexRs); err != nil {
-		http.Error(w, "failed to encode", http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(schema.ErrorResponse{Error: "failed to encode response"})
 		return
 	}
 }

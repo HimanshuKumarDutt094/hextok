@@ -26,40 +26,34 @@ func main() {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
-	// DB
 	d, err := db.New()
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer d.Close()
 
-	// platform stores
 	userStore := platform.NewUserStore(d)
 	hexStore := platform.NewHexStore(d)
 	oauthStore := platform.NewOauthStore(d)
 	followStore := platform.NewFollowStore(d)
 	sessionStore := platform.NewSessionStore(d)
 	likeStore := platform.NewLikeStore(d)
-	// handlers (note users.NewHandler expects a value receiver type)
+
 	usersHandler := users.NewHandler(userStore, sessionStore)
 	authHandler := auth.NewHandler(userStore, oauthStore, sessionStore, nil)
 	hexHandler := hexes.NewHandler(hexStore, sessionStore)
 	followHandler := follows.NewHandler(followStore, sessionStore)
 	likeHandler := likes.NewHandler(hexStore, likeStore, sessionStore)
-	// mux and route wiring
-	// Express-like pattern: v1 owns registration of its child routes.
-	// Use nested sub-muxes so server owns /api, v1 owns /v1 and modules own relative paths.
-	rootMux := server.NewMux() // root mux
+
+	rootMux := server.NewMux()
 
 	apiMux := http.NewServeMux()
-	// mount apiMux at /api on the root mux
 	rootMux.Handle("/api/", http.StripPrefix("/api", apiMux))
 
 	v1Mux := http.NewServeMux()
-	// mount v1Mux at /v1 on the api mux
+
 	apiMux.Handle("/v1/", http.StripPrefix("/v1", v1Mux))
 
-	// register v1 routes onto v1Mux (handlers should register relative paths like "/oauth/...")
 	v1.RegisterV1Routes(v1Mux, usersHandler, authHandler, followHandler, hexHandler, likeHandler)
 
 	srv := &http.Server{
@@ -70,7 +64,6 @@ func main() {
 		IdleTimeout:  120 * time.Second,
 	}
 
-	// graceful shutdown
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 

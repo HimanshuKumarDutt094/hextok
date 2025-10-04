@@ -11,12 +11,9 @@ type UserStore struct {
 	DB *sql.DB
 }
 
-// 2. Create a specific constructor for this store.
 func NewUserStore(db *sql.DB) *UserStore {
 	return &UserStore{DB: db}
 }
-
-// compile-time assertions: ensure *UserStore implements the interfaces
 
 func (r *UserStore) CreateUser(ctx context.Context, username string) (int64, error) {
 	var id int64

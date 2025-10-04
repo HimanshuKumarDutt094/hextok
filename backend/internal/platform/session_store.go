@@ -1,4 +1,3 @@
-// ...existing code...
 package platform
 
 import (
@@ -13,7 +12,6 @@ type SessionStore struct {
 	DB *sql.DB
 }
 
-// 2. Create a specific constructor for this store.
 func NewSessionStore(db *sql.DB) *SessionStore {
 	return &SessionStore{DB: db}
 }
@@ -22,7 +20,7 @@ var _ domains.SessionRepo = (*SessionStore)(nil)
 
 func (r *SessionStore) CreateSession(ctx context.Context, userId int64, secretHash string) (int64, error) {
 	var id int64
-	// store secretHash as TEXT (you may use base64 encoding if binary)
+
 	query := `INSERT INTO session (userId, secretHash, createdAt, lastVerifiedAt)
               VALUES ($1, $2, NOW(), NOW()) RETURNING id`
 	err := r.DB.QueryRowContext(ctx, query, userId, string(secretHash)).Scan(&id)
@@ -79,5 +77,3 @@ func (r *SessionStore) UpdateLastVerified(ctx context.Context, id int64, t time.
 	_, err := r.DB.ExecContext(ctx, query, t, id)
 	return err
 }
-
-// ...existing code...
