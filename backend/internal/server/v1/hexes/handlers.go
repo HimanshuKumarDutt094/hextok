@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 // ListHexesHandler returns all hex colors.
@@ -27,21 +28,18 @@ func (h *Handler) listHexesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// GetHexHandler returns a single hex color by id. It also dispatches like/unlike
-// requests for paths like /hexes/{id}/like to the likes package handlers.
 func (h *Handler) getHexHandler(w http.ResponseWriter, r *http.Request) {
-	params := r.URL.Query()
-	id := params.Get("id")
-	if len(id) == 0 {
-		http.Error(w, "id not found", http.StatusBadRequest)
+	idStr := strings.TrimPrefix(r.URL.Path, "/hexes/")
+	if len(idStr) == 0 {
+		http.Error(w, "no id povided", http.StatusBadRequest)
 		return
 	}
-	parsedId, err := strconv.ParseInt(id, 10, 64)
+	hexId, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		http.Error(w, "id is not of correct type", http.StatusBadRequest)
+		http.Error(w, "id failed to parse", http.StatusBadRequest)
 		return
 	}
-	res, err := h.hexStore.GetHexById(r.Context(), parsedId)
+	res, err := h.hexStore.GetHexById(r.Context(), hexId)
 	if err != nil {
 		http.Error(w, "no hex found", http.StatusNoContent)
 		return

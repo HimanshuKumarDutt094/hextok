@@ -16,6 +16,7 @@ import (
 	"github.com/HimanshuKumarDutt094/hextok/internal/server/v1/auth"
 	"github.com/HimanshuKumarDutt094/hextok/internal/server/v1/follows"
 	"github.com/HimanshuKumarDutt094/hextok/internal/server/v1/hexes"
+	"github.com/HimanshuKumarDutt094/hextok/internal/server/v1/likes"
 	"github.com/HimanshuKumarDutt094/hextok/internal/server/v1/users"
 	"github.com/joho/godotenv"
 )
@@ -38,13 +39,13 @@ func main() {
 	oauthStore := platform.NewOauthStore(d)
 	followStore := platform.NewFollowStore(d)
 	sessionStore := platform.NewSessionStore(d)
-
+	likeStore := platform.NewLikeStore(d)
 	// handlers (note users.NewHandler expects a value receiver type)
 	usersHandler := users.NewHandler(userStore, sessionStore)
 	authHandler := auth.NewHandler(userStore, oauthStore, sessionStore, nil)
-	hexHandler := hexes.NewHandler(hexStore)
-	followHandler := follows.NewHandler(followStore)
-
+	hexHandler := hexes.NewHandler(hexStore, sessionStore)
+	followHandler := follows.NewHandler(followStore, sessionStore)
+	likeHandler := likes.NewHandler(hexStore, likeStore, sessionStore)
 	// mux and route wiring
 	// Express-like pattern: v1 owns registration of its child routes.
 	// Use nested sub-muxes so server owns /api, v1 owns /v1 and modules own relative paths.
@@ -59,7 +60,7 @@ func main() {
 	apiMux.Handle("/v1/", http.StripPrefix("/v1", v1Mux))
 
 	// register v1 routes onto v1Mux (handlers should register relative paths like "/oauth/...")
-	v1.RegisterV1Routes(v1Mux, usersHandler, authHandler, followHandler, hexHandler)
+	v1.RegisterV1Routes(v1Mux, usersHandler, authHandler, followHandler, hexHandler, likeHandler)
 
 	srv := &http.Server{
 		Addr:         ":8080",

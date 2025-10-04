@@ -5,11 +5,12 @@ import (
 )
 
 type Handler struct {
-	hexStore domains.HexRepo
+	hexStore     domains.HexRepo
+	sessionStore domains.SessionRepo
 }
 
-func NewHandler(h domains.HexRepo) *Handler {
-	return &Handler{hexStore: h}
+func NewHandler(h domains.HexRepo, s domains.SessionRepo) *Handler {
+	return &Handler{hexStore: h, sessionStore: s}
 }
 
 type HexResponse struct {

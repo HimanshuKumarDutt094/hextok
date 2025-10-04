@@ -12,7 +12,7 @@ import (
 
 // RegisterV1Routes registers all v1 routes in a deterministic order.
 // Pass in the constructed handlers so platform dependencies are injected.
-func RegisterV1Routes(mux *http.ServeMux, usersHandler *users.Handler, authHandler *auth.Handler, followsHandler *follows.Handler, hexHandler *hexes.Handler) {
+func RegisterV1Routes(mux *http.ServeMux, usersHandler *users.Handler, authHandler *auth.Handler, followsHandler *follows.Handler, hexHandler *hexes.Handler, likeHandler *likes.Handler) {
 	// Register exact /users first.
 	if usersHandler != nil {
 		usersHandler.RegisterRoutes(mux)
@@ -26,8 +26,9 @@ func RegisterV1Routes(mux *http.ServeMux, usersHandler *users.Handler, authHandl
 		hexHandler.RegisterRoutes(mux)
 
 	}
-
-	likes.RegisterRoutes(mux)
+	if likeHandler != nil {
+		likeHandler.RegisterRoutes(mux)
+	}
 
 	if followsHandler != nil {
 		followsHandler.RegisterRoutes(mux)
