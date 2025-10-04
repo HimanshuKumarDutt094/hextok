@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"context"
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/base64"
@@ -11,6 +12,11 @@ import (
 
 	"github.com/HimanshuKumarDutt094/hextok/internal/domains"
 )
+
+// contextKey is a custom type for context keys to avoid collisions.
+type contextKey string
+
+const authedUserIDKey contextKey = "authedUserId"
 
 // NewAuthMiddleware returns a middleware function that checks authentication
 func NewAuthMiddleware(sessionRepo domains.SessionRepo) func(http.Handler) http.Handler {
@@ -57,7 +63,9 @@ func NewAuthMiddleware(sessionRepo domains.SessionRepo) func(http.Handler) http.
 			}
 
 			fmt.Println("user authenticated")
-			handler.ServeHTTP(w, r) // Continue to next handler
+			authContext := context.WithValue(r.Context(), authedUserIDKey, s.UserId)
+			newR := r.WithContext(authContext)
+			handler.ServeHTTP(w, newR) // Continue to next handler
 		})
 	}
 }
