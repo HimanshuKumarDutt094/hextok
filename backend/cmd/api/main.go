@@ -14,6 +14,8 @@ import (
 	"github.com/HimanshuKumarDutt094/hextok/internal/server"
 	v1 "github.com/HimanshuKumarDutt094/hextok/internal/server/v1"
 	"github.com/HimanshuKumarDutt094/hextok/internal/server/v1/auth"
+	"github.com/HimanshuKumarDutt094/hextok/internal/server/v1/follows"
+	"github.com/HimanshuKumarDutt094/hextok/internal/server/v1/hexes"
 	"github.com/HimanshuKumarDutt094/hextok/internal/server/v1/users"
 	"github.com/joho/godotenv"
 )
@@ -32,12 +34,16 @@ func main() {
 
 	// platform stores
 	userStore := platform.NewUserStore(d)
+	hexStore := platform.NewHexStore(d)
 	oauthStore := platform.NewOauthStore(d)
+	followStore := platform.NewFollowStore(d)
 	sessionStore := platform.NewSessionStore(d)
 
 	// handlers (note users.NewHandler expects a value receiver type)
-	usersHandler := users.NewHandler(*userStore)
+	usersHandler := users.NewHandler(userStore, sessionStore)
 	authHandler := auth.NewHandler(userStore, oauthStore, sessionStore, nil)
+	hexHandler := hexes.NewHandler(hexStore)
+	followHandler := follows.NewHandler(followStore)
 
 	// mux and route wiring
 	// Express-like pattern: v1 owns registration of its child routes.
@@ -53,7 +59,7 @@ func main() {
 	apiMux.Handle("/v1/", http.StripPrefix("/v1", v1Mux))
 
 	// register v1 routes onto v1Mux (handlers should register relative paths like "/oauth/...")
-	v1.RegisterV1Routes(v1Mux, usersHandler, authHandler, nil)
+	v1.RegisterV1Routes(v1Mux, usersHandler, authHandler, followHandler, hexHandler)
 
 	srv := &http.Server{
 		Addr:         ":8080",

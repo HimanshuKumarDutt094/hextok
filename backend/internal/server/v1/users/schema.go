@@ -1,13 +1,14 @@
 package users
 
 import (
-	"github.com/HimanshuKumarDutt094/hextok/internal/platform"
+	"github.com/HimanshuKumarDutt094/hextok/internal/domains"
 )
 
 type Handler struct {
-	userStore platform.UserStore
+	userStore    domains.UserRepo
+	sessionStore domains.SessionRepo
 }
 
-func NewHandler(s platform.UserStore) *Handler {
-	return &Handler{userStore: s}
+func NewHandler(u domains.UserRepo, s domains.SessionRepo) *Handler {
+	return &Handler{userStore: u, sessionStore: s}
 }

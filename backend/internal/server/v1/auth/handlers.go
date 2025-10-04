@@ -340,36 +340,3 @@ func (h *Handler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{Name: sessionCookieName, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, Secure: true})
 	w.WriteHeader(http.StatusOK)
 }
-
-func (h *Handler) AuthMiddleware(w http.ResponseWriter, r *http.Request) {
-	hexttokCookie, err := r.Cookie("hextok_session")
-	if err != nil {
-		fmt.Println("cookie doesnt exsit")
-	}
-	decodedVals, err := base64.RawURLEncoding.DecodeString(hexttokCookie.Value)
-	if err != nil {
-		fmt.Println("decode failed")
-	}
-	decodedString := string(decodedVals)
-	parts := strings.Split(decodedString, "|")
-	if len(parts) != 2 {
-		fmt.Println("wring cookie panic here")
-	}
-	id, err := strconv.ParseInt(parts[0], 10, 64)
-	if err != nil {
-		fmt.Println("id parsing failed")
-	}
-	rawTok := parts[1]
-	sum := sha256.Sum256([]byte(rawTok))
-	hash := base64.StdEncoding.EncodeToString(sum[:])
-
-	s, err := h.SessionRepo.GetSessionById(r.Context(), id)
-	if err != nil {
-		fmt.Println("session not found log out here delete cookies send to login page")
-
-	}
-	if subtle.ConstantTimeCompare(s.SecretHash, []byte(hash)) != 1 {
-		fmt.Println("state signature mismatch")
-	}
-	fmt.Println("hash matched user is verified")
-}
