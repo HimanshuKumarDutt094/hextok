@@ -5,11 +5,85 @@ node_modules
 out
 dist
 *.tgz
+.gradle
+docs
+tmp
+/app/build/
+/outputs
+/intermediates
+/build
+android/app/google-services.json
+app/android/app/build/
+*.bin
+app/android/app/build/
 
+# Android/Kotlin/Java project files to ignore
+/build
+/local.properties
+/.idea
+*.iml
+*.apk
+*.aar
+*.dex
+*.class
+*.log
+*.hprof
+captures/
+.externalNativeBuild/
+.cxx/
+expo-web-browser-code
 # code coverage
 coverage
 *.lcov
+# See http://help.github.com/ignore-files/ for more about ignoring files.
 
+# compiled output
+dist
+tmp
+/out-tsc
+*.orig
+
+# dependencies
+node_modules
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# misc
+/.sass-cache
+/connect.lock
+/coverage
+/libpeerconnection.log
+npm-debug.log
+yarn-error.log
+testem.log
+/typings
+
+# System Files
+.DS_Store
+Thumbs.db
+
+# Local Templates
+*.tgz
+*.tar
+
+vite.config.*.timestamp*
+vitest.config.*.timestamp*
+
+packages/create-app/templates
 # logs
 logs
 _.log

@@ -1,5 +1,5 @@
 {
-  "name": "rspeedy-react-ts",
+  "name": "app",
   "version": "1.0.0",
   "type": "module",
   "scripts": {
@@ -7,33 +7,37 @@
     "dev": "rspeedy dev",
     "format": "prettier --write .",
     "lint": "eslint .",
-    "preview": "rspeedy preview"
+    "preview": "rspeedy preview",
+    "test": "vitest run"
   },
   "dependencies": {
-    "@lynx-js/react": "^0.113.0",
-    "@tanstack/react-query": "^5.90.1",
+    "@lynx-js/react": "^0.114.1",
+    "@tanstack/react-query": "^5.90.2",
     "react-router": "6",
     "zod": "^4.1.11",
     "zustand": "^5.0.8"
   },
   "devDependencies": {
-    "@eslint/js": "^9.35.0",
+    "@eslint/js": "^9.32.0",
     "@lynx-js/preact-devtools": "^5.0.1-6664329",
     "@lynx-js/qrcode-rsbuild-plugin": "^0.4.1",
-    "@lynx-js/react-rsbuild-plugin": "^0.10.14",
-    "@lynx-js/rspeedy": "^0.11.2",
+    "@lynx-js/react-rsbuild-plugin": "^0.10.13",
+    "@lynx-js/rspeedy": "^0.11.0",
     "@lynx-js/tailwind-preset": "^0.4.0",
     "@lynx-js/types": "3.4.11",
     "@rsbuild/plugin-type-check": "1.2.4",
+    "@testing-library/jest-dom": "^6.8.0",
     "@types/react": "^18.3.23",
-    "eslint": "^9.35.0",
+    "eslint": "^9.32.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.3.0",
+    "jsdom": "^26.1.0",
     "prettier": "^3.6.2",
     "tailwindcss": "^3",
     "typescript": "~5.9.2",
-    "typescript-eslint": "^8.43.0"
+    "typescript-eslint": "^8.38.0",
+    "vitest": "^3.2.4"
   },
   "engines": {
     "node": ">=18"
