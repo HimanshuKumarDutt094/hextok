@@ -20,13 +20,35 @@ const authedUserIDKey contextKey = "authedUserId"
 func NewAuthMiddleware(sessionRepo domains.SessionRepo) func(http.Handler) http.Handler {
 	return func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			hexttokCookie, err := r.Cookie("hextok_session")
-			if err != nil {
-				writeJSONError(w, http.StatusUnauthorized, "session cookie missing")
+			// Try Authorization header first (preferred for mobile apps)
+			authHeader := r.Header.Get("Authorization")
+			var sessionToken string
+
+			if authHeader != "" {
+				// Check for Bearer token format
+				if strings.HasPrefix(authHeader, "Bearer ") {
+					sessionToken = strings.TrimPrefix(authHeader, "Bearer ")
+				} else {
+					// Support direct token in Authorization header
+					sessionToken = authHeader
+				}
+			} else {
+				// Fallback to cookie for web clients
+				hexttokCookie, err := r.Cookie("hextok_session")
+				if err != nil {
+					writeJSONError(w, http.StatusUnauthorized, "authentication required - no token or session cookie")
+					return
+				}
+				sessionToken = hexttokCookie.Value
+			}
+
+			if sessionToken == "" {
+				writeJSONError(w, http.StatusUnauthorized, "authentication required - empty token")
 				return
 			}
 
-			decodedVals, err := base64.RawURLEncoding.DecodeString(hexttokCookie.Value)
+			// Decode the session token
+			decodedVals, err := base64.RawURLEncoding.DecodeString(sessionToken)
 			if err != nil {
 				writeJSONError(w, http.StatusUnauthorized, "invalid session encoding")
 				return

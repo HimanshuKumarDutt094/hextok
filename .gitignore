@@ -6,7 +6,9 @@ out
 dist
 *.tgz
 .gradle
-docs
+docs 
+doc
+webbrowser
 tmp
 /app/build/
 /outputs
@@ -16,7 +18,7 @@ android/app/google-services.json
 app/android/app/build/
 *.bin
 app/android/app/build/
-
+/android/
 # Android/Kotlin/Java project files to ignore
 /build
 /local.properties

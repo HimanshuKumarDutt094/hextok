@@ -4,10 +4,10 @@ import './index.css';
 import { root } from '@lynx-js/react';
 
 import QueryProvider from './providers/react-query';
-import Router from './routes/router';
+import { AppWrapper } from './app-wrapper';
 root.render(
   <QueryProvider>
-    <Router />
+    <AppWrapper />
   </QueryProvider>,
 );
 

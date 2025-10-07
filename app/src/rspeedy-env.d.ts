@@ -55,7 +55,9 @@ export interface WebBrowserRedirectResult {
   url: string;
 }
 
-export type WebBrowserAuthSessionResult = WebBrowserRedirectResult | WebBrowserResult;
+export type WebBrowserAuthSessionResult =
+  | WebBrowserRedirectResult
+  | WebBrowserResult;
 
 export interface WebBrowserCustomTabsResults {
   defaultBrowserPackage?: string;
@@ -101,7 +103,10 @@ export const WebBrowserErrorCodes = {
 export type WebBrowserErrorCode =
   (typeof WebBrowserErrorCodes)[keyof typeof WebBrowserErrorCodes];
 
-export type WebBrowserWindowFeatures = Record<string, number | boolean | string>;
+export type WebBrowserWindowFeatures = Record<
+  string,
+  number | boolean | string
+>;
 export type WebBrowserWarmUpResult = ServiceActionResult;
 export type WebBrowserMayInitWithUrlResult = ServiceActionResult;
 export type WebBrowserCoolDownResult = ServiceActionResult;
@@ -144,6 +149,151 @@ declare module '@lynx-js/types' {
       ) => void;
       style?: string | Lynx.CSSProperties;
       className?: string;
+    };
+
+    button: {
+      id?: string;
+      name?: string;
+
+      // Content
+      text?: string;
+
+      // Behavior props
+      disabled?: boolean;
+      androidDisableSound?: boolean;
+      unstablePressDelay?: number;
+      delayLongPress?: number;
+
+      // Ripple effect (Android)
+      rippleColor?: string;
+      rippleBorderless?: boolean;
+      rippleRadius?: number;
+      rippleForeground?: boolean;
+
+      // Hit testing
+      hitSlop?:
+        | number
+        | { top?: number; left?: number; right?: number; bottom?: number };
+      pressRetentionOffset?:
+        | number
+        | { top?: number; left?: number; right?: number; bottom?: number };
+
+      // Testing
+      testOnlyPressed?: boolean;
+
+      // Press event handlers
+      bindpress?: (
+        e: Lynx.BaseEvent<
+          'press',
+          {
+            pressed: boolean;
+            timestamp: number;
+            locationX: number;
+            locationY: number;
+            pageX: number;
+            pageY: number;
+          }
+        >,
+      ) => void;
+
+      bindpressIn?: (
+        e: Lynx.BaseEvent<
+          'pressIn',
+          {
+            pressed: boolean;
+            timestamp: number;
+            locationX: number;
+            locationY: number;
+            pageX: number;
+            pageY: number;
+          }
+        >,
+      ) => void;
+
+      bindpressOut?: (
+        e: Lynx.BaseEvent<
+          'pressOut',
+          {
+            pressed: boolean;
+            timestamp: number;
+            locationX: number;
+            locationY: number;
+            pageX: number;
+            pageY: number;
+          }
+        >,
+      ) => void;
+
+      bindpressMove?: (
+        e: Lynx.BaseEvent<
+          'pressMove',
+          {
+            pressed: boolean;
+            timestamp: number;
+            locationX: number;
+            locationY: number;
+            pageX: number;
+            pageY: number;
+          }
+        >,
+      ) => void;
+
+      bindlongPress?: (
+        e: Lynx.BaseEvent<
+          'longPress',
+          {
+            pressed: boolean;
+            timestamp: number;
+            locationX: number;
+            locationY: number;
+            pageX: number;
+            pageY: number;
+          }
+        >,
+      ) => void;
+
+      // Hover event handlers (for devices that support it)
+      bindhoverIn?: (
+        e: Lynx.BaseEvent<
+          'hoverIn',
+          {
+            pressed: boolean;
+            timestamp: number;
+            locationX: number;
+            locationY: number;
+            pageX: number;
+            pageY: number;
+          }
+        >,
+      ) => void;
+
+      bindhoverOut?: (
+        e: Lynx.BaseEvent<
+          'hoverOut',
+          {
+            pressed: boolean;
+            timestamp: number;
+            locationX: number;
+            locationY: number;
+            pageX: number;
+            pageY: number;
+          }
+        >,
+      ) => void;
+
+      // Standard attributes
+      style?: string | Lynx.CSSProperties;
+      className?: string;
+
+      // Accessibility
+      'accessibility-element'?: boolean;
+      'accessibility-label'?: string;
+      'accessibility-trait'?: 'none' | 'button' | 'image' | 'text';
+
+      // Children as function or elements
+      children?:
+        | React.ReactNode
+        | ((state: { pressed: boolean }) => React.ReactNode);
     };
 
     'explorer-textarea': {
@@ -266,6 +416,15 @@ declare module '@lynx-js/types' {
       bindclose?: (e: Lynx.BaseEvent<'close', Record<string, unknown>>) => void;
       style?: string | Lynx.CSSProperties;
       className?: string;
+      /**
+       * Ref for the underlying web-view element. Accepts callback refs, RefObjects, or direct element.
+       * This allows using React-style `useRef` or callback refs with `<web-view ref={...} />`.
+       */
+      ref?:
+        | ((instance: HTMLElement | null) => void)
+        | { current: HTMLElement | null }
+        | HTMLElement
+        | null;
     };
   }
 }
@@ -387,15 +546,101 @@ declare global {
     cancelAuth(): Promise<void>;
   }
 
-  // NativeModules declaration following LynxJS pattern
+  // Local Storage Module for persistent storage
+  interface LynxLocalStorageModule {
+    setStorageItem(key: string, value: string): void;
+    getStorageItem(key: string, callback: (value: string | null) => void): void;
+    removeStorageItem(key: string): void;
+    clearStorage(): void;
+    getAllKeys(callback: (keys: string[]) => void): void;
+  }
+
+  // Mobile OAuth flow types
+  interface MobileOAuthStartOptions {
+    redirectUri?: string;
+    state: string;
+    baseUrl?: string;
+  }
+
+  interface MobileOAuthResult {
+    status: 'success' | 'error';
+    token?: string;
+    userId?: string;
+    expiresIn?: number;
+    state?: string;
+    error?: string;
+    errorDescription?: string;
+  }
+
+  interface MobileTokenExchangeRequest {
+    token: string;
+  }
+
+  interface MobileTokenExchangeResponse {
+    token: string;
+    expiresIn: number;
+    userId: number;
+    sessionId: number;
+  }
+
+  // Deep link native module interface
+  interface LynxDeepLinkModule {
+    /** Test method to verify module is working */
+    testMethod(): void;
+
+    /** Get the last received deep link data */
+    getLastDeepLink(
+      callback: (
+        data: {
+          url: string;
+          host: string;
+          path: string;
+          queryParams: Record<string, string | null>;
+          timestamp: number;
+        } | null,
+      ) => void,
+    ): void;
+
+    /** Clear the stored deep link data */
+    clearDeepLink(): void;
+
+    /** Check if there is stored deep link data */
+    hasDeepLink(callback: (hasData: boolean) => void): void;
+  } // NativeModules declaration following LynxJS pattern
   declare let NativeModules: {
     SecureStorage: LynxSecureStorageModule;
     FilePicker: LynxFilePickerModule;
     FilePermission: LynxFilePermissionModule;
     NativeAuthModule: LynxNativeAuthModule;
     LynxWebBrowserModule: LynxWebBrowserModule;
+    LocalStorageModule: LynxLocalStorageModule;
+    /** Deep link module added for hextok:// handling */
+    DeepLinkModule: LynxDeepLinkModule;
   };
 }
+
+// Re-export types for convenience
+export type {
+  StorageOptions,
+  WebBrowserOpenOptions,
+  AuthSessionOpenOptions,
+  WebBrowserResult,
+  WebBrowserRedirectResult,
+  WebBrowserAuthSessionResult,
+  WebBrowserCustomTabsResults,
+  ServiceActionResult,
+  WebBrowserCompleteAuthSessionResult,
+  WebBrowserWindowFeatures,
+  WebBrowserWarmUpResult,
+  WebBrowserMayInitWithUrlResult,
+  WebBrowserCoolDownResult,
+  WebBrowserErrorCode,
+  LynxFileDescriptor,
+  MobileOAuthStartOptions,
+  MobileOAuthResult,
+  MobileTokenExchangeRequest,
+  MobileTokenExchangeResponse,
+};
 
 // This export makes the file a module
 export {};

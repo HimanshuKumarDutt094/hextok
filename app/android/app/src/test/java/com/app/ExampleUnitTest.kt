@@ -1,4 +1,4 @@
-package com.app
+package com.hextok
 
 import org.junit.Test
 

@@ -69,6 +69,32 @@ func (h *Handler) handleGetUserProfile(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) handleMe(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusNotImplemented)
-	_ = json.NewEncoder(w).Encode(schema.ErrorResponse{Error: "not implemented"})
+
+	// Get the authenticated user ID from the middleware
+	userId, ok := middlewares.GetAuthedUserID(r.Context())
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		_ = json.NewEncoder(w).Encode(schema.ErrorResponse{Error: "unauthorized"})
+		return
+	}
+
+	// Get user from database
+	user, err := h.userStore.GetUserById(r.Context(), userId)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		_ = json.NewEncoder(w).Encode(schema.ErrorResponse{Error: "user not found"})
+		return
+	}
+
+	// Return user data
+	response := schema.UserResponse{
+		ID:       user.Id,
+		UserName: user.UserName,
+	}
+
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(schema.ErrorResponse{Error: "encoding failed"})
+		return
+	}
 }

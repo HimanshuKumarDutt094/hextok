@@ -1,71 +1,61 @@
-import React from 'react';
-import { useLocation } from 'react-router';
+import { useQuery } from '@tanstack/react-query';
+import { authenticatedFetcher, queryKeys } from '../../../query';
+import { API_BASE } from '../../../config';
+import { type HexResponse } from '../../../schemas/types';
 import { useAuth } from '../../../hooks/auth';
-import { openAuth } from '../../../lynx-native-auth';
-import WebView from '../../../components/WebView';
-import { useWebBrowser } from '../../../hooks/useWebBrowser';
-import WebViewTest from '../../../components/webview-test';
+import HexCard from './hex-card';
 
 const HomePage = () => {
-  const p = useLocation();
-  const { session } = useAuth();
-  console.log('home page', p);
-  const { openBrowser, isLoading, result, error } = useWebBrowser();
+  const { authToken } = useAuth();
 
-  const handlePress = () => {
-    openBrowser('https://example.com', {
-      toolbarColor: '#007AFF',
-      showTitle: true,
-    });
-  };
-  return (
-    <view className="flex-1 px-2    justify-center items-center">
-      <text className="text-4xl">Homse</text>
-      <text className="text-2xl mt-4">Welcome, {session?.name}</text>
-      <view className="flex-row mt-6">
-        <view bindtap={handlePress}>
-          <text>{isLoading ? 'Opening...' : 'Open Browser'}</text>
-          {error && <text>Error: {error}</text>}
-        </view>
-        <view
-          className="px-4 py-2 bg-blue-500 rounded mr-3"
-          bindtap={() =>
-            openAuth(
-              'https://github.com/login/oauth/authorize?client_id=YOUR_CLIENT_ID',
-              {
-                callbackScheme: 'myapp://callback',
-              },
-            )
-          }
-        >
-          <text className="text-white">Sign in with GitHub</text>
-        </view>
-
-        <view
-          className="px-4 py-2 bg-gray-300 rounded"
-          bindtap={() =>
-            openAuth('https://example.com/auth', {
-              callbackScheme: 'myapp://callback',
-            })
-          }
-        >
-          <view className="">
-            <web-view
-              src="https://www.google.com"
-              showTitle
-              style={{
-                width: '100%',
-                height: '100%',
-                borderRadius: 40,
-                borderWidth: 4,
-                borderColor: 'black',
-              }}
-            />
-          </view>
-          <text>Sign in (Otherss)</text>
-        </view>
+  const { data, isLoading, error } = useQuery({
+    queryKey: queryKeys.hexColors,
+    queryFn: () => {
+      if (!authToken) {
+        throw new Error('No auth token available');
+      }
+      return authenticatedFetcher<HexResponse[]>(
+        `${API_BASE}/api/v1/hexes`,
+        authToken,
+      );
+    },
+    enabled: !!authToken, // Only run query when we have a token
+  });
+  if (isLoading)
+    return (
+      <view>
+        <HexCard id="loading" hexValue="#FFFF55" />
       </view>
-      <WebViewTest />
+    );
+  if (error || !data)
+    return (
+      <view className="pt-20">
+        <text>Error: {(error as Error).message}</text>
+      </view>
+    );
+
+  console.log('Fetched hex colors:', data);
+  return (
+    <view className="flex-1 px-2 pb-40 justify-center items-center">
+      <list
+        className="h-full w-full"
+        scroll-orientation="vertical"
+        list-type="single"
+        span-count={2}
+        style={{
+          width: '100%',
+          height: '100vh',
+        }}
+      >
+        {data.map((hex) => (
+          <list-item
+            item-key={`list-item-${hex.id}`}
+            key={`list-item-${hex.id}`}
+          >
+            <HexCard key={hex.id} id={hex.id} hexValue={hex.hexValue} />
+          </list-item>
+        ))}
+      </list>
     </view>
   );
 };

@@ -12,7 +12,7 @@ updatedAt TIMESTAMP NOT NULL DEFAULT NOW()
 const CreateHexTable = `
 CREATE TABLE IF NOT EXISTS hex (
 id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-hexValue TEXT
+hexValue TEXT UNIQUE
 )
 `
 const CreateSessionTable = `

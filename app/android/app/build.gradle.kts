@@ -1,15 +1,15 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
-    // Removed kapt as it's causing compatibility issues
+    id("kotlin-kapt")
 }
 
 android {
-    namespace = "com.app"
+    namespace = "com.hextok"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.app"
+        applicationId = "com.hextok"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
@@ -96,10 +96,10 @@ dependencies {
     implementation("org.lynxsdk.lynx:lynx-trace:3.4.1")
     implementation("org.lynxsdk.lynx:primjs:2.14.1")
 
-    // lynx-processor for annotation processing - commented out due to compatibility issues
-    // kapt("org.lynxsdk.lynx:lynx-processor:3.4.1")
-    // compileOnly("org.lynxsdk.lynx:lynx-processor:3.4.1")
-    // annotationProcessor("org.lynxsdk.lynx:lynx-processor:3.4.1")
+    // lynx-processor for annotation processing
+    kapt("org.lynxsdk.lynx:lynx-processor:3.4.1")
+    compileOnly("org.lynxsdk.lynx:lynx-processor:3.4.1")
+    annotationProcessor("org.lynxsdk.lynx:lynx-processor:3.4.1")
 
     // integrating image-service
     implementation("org.lynxsdk.lynx:lynx-service-image:3.4.1")
@@ -118,7 +118,6 @@ dependencies {
     implementation("org.lynxsdk.lynx:lynx-service-http:3.4.1")
 
     implementation("com.squareup.okhttp3:okhttp:4.9.0")
-
     // add devtool's dependencies
     implementation ("org.lynxsdk.lynx:lynx-devtool:3.4.1")
     implementation ("org.lynxsdk.lynx:lynx-service-devtool:3.4.1")
