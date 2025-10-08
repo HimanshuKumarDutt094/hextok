@@ -7,16 +7,18 @@ import (
 	"strings"
 
 	"github.com/HimanshuKumarDutt094/hextok/internal/domains"
+	"github.com/HimanshuKumarDutt094/hextok/internal/server/middlewares"
 	"github.com/HimanshuKumarDutt094/hextok/internal/server/schema"
 )
 
 type Handler struct {
 	hexStore     domains.HexRepo
 	sessionStore domains.SessionRepo
+	likeStore    domains.LikeRepo
 }
 
-func NewHandler(h domains.HexRepo, s domains.SessionRepo) *Handler {
-	return &Handler{hexStore: h, sessionStore: s}
+func NewHandler(h domains.HexRepo, l domains.LikeRepo, s domains.SessionRepo) *Handler {
+	return &Handler{hexStore: h, sessionStore: s, likeStore: l}
 }
 
 func (h *Handler) listHexesHandler(w http.ResponseWriter, r *http.Request) {
@@ -28,11 +30,42 @@ func (h *Handler) listHexesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	users := make([]schema.HexResponse, 0, len(data))
+	// collect ids for batch like count lookup
+	ids := make([]int64, 0, len(data))
 	for _, v := range data {
-		users = append(users, schema.HexResponse{
-			Id:       v.Id,
-			HexValue: v.HexValue,
-		})
+		ids = append(ids, v.Id)
+	}
+
+	// fetch counts in one query if likeStore available
+	counts := map[int64]int{}
+	if h.likeStore != nil {
+		if c, err := h.likeStore.GetLikeCountsForHexes(r.Context(), ids); err == nil {
+			counts = c
+		}
+	}
+
+	// build a set of liked ids for the current user (if authed)
+	likedSet := map[int64]struct{}{}
+	if h.likeStore != nil {
+		if userId, ok := middlewares.GetAuthedUserID(r.Context()); ok {
+			if likedHexes, err := h.likeStore.GetLikedHexesByUser(r.Context(), userId); err == nil {
+				for _, lh := range likedHexes {
+					likedSet[lh.Id] = struct{}{}
+				}
+			}
+		}
+	}
+
+	for _, v := range data {
+		lr := schema.HexResponse{
+			Id:        v.Id,
+			HexValue:  v.HexValue,
+			LikeCount: counts[v.Id],
+		}
+		if _, ok := likedSet[v.Id]; ok {
+			lr.IsLiked = true
+		}
+		users = append(users, lr)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(users); err != nil {
@@ -62,12 +95,28 @@ func (h *Handler) getHexHandler(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(schema.ErrorResponse{Error: "hex not found"})
 		return
 	}
-	hexRes := schema.HexResponse{
+	// populate like count and isLiked if likeStore available
+	lr := schema.HexResponse{
 		Id:       res.Id,
 		HexValue: res.HexValue,
 	}
+	if h.likeStore != nil {
+		if counts, err := h.likeStore.GetLikeCountsForHexes(r.Context(), []int64{res.Id}); err == nil {
+			lr.LikeCount = counts[res.Id]
+		}
+		if userId, ok := middlewares.GetAuthedUserID(r.Context()); ok {
+			if likedHexes, err := h.likeStore.GetLikedHexesByUser(r.Context(), userId); err == nil {
+				for _, lh := range likedHexes {
+					if lh.Id == res.Id {
+						lr.IsLiked = true
+						break
+					}
+				}
+			}
+		}
+	}
 
-	if err := json.NewEncoder(w).Encode(hexRes); err != nil {
+	if err := json.NewEncoder(w).Encode(lr); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(schema.ErrorResponse{Error: "failed to encode response"})
 		return

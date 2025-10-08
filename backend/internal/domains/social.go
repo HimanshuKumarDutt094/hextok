@@ -16,6 +16,8 @@ type LikeRepo interface {
 	RemoveLike(ctx context.Context, userId int64, hexId int64) error
 	GetLikesForHex(ctx context.Context, hexId int64) ([]Liked, error)
 	GetLikedHexesByUser(ctx context.Context, userId int64) ([]Hex, error)
+	// GetLikeCountsForHexes returns a map from hexId to total like count for the provided ids.
+	GetLikeCountsForHexes(ctx context.Context, hexIds []int64) (map[int64]int, error)
 }
 
 type Follow struct {

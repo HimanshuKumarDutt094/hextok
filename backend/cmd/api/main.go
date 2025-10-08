@@ -41,7 +41,7 @@ func main() {
 
 	usersHandler := users.NewHandler(userStore, sessionStore)
 	authHandler := auth.NewHandler(userStore, oauthStore, sessionStore, nil)
-	hexHandler := hexes.NewHandler(hexStore, sessionStore)
+	hexHandler := hexes.NewHandler(hexStore, likeStore, sessionStore)
 	followHandler := follows.NewHandler(followStore, sessionStore)
 	likeHandler := likes.NewHandler(hexStore, likeStore, sessionStore)
 

@@ -42,8 +42,9 @@ func (h *Handler) LikeHexHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := h.likeStore.AddLike(r.Context(), userId, hexId); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(schema.ErrorResponse{Error: "failed to add like"})
+		h.likeStore.RemoveLike(r.Context(), userId, hexId)
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(schema.OkResponse{Message: "removed like"})
 		return
 	}
 	w.WriteHeader(http.StatusOK)

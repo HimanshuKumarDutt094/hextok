@@ -4,6 +4,7 @@ import { API_BASE } from '../../../config';
 import { type HexResponse } from '../../../schemas/types';
 import { useAuth } from '../../../hooks/auth';
 import HexCard from './hex-card';
+import TiktokFeed from '../../../components/tiktok-feed';
 
 const HomePage = () => {
   const { authToken } = useAuth();
@@ -24,7 +25,7 @@ const HomePage = () => {
   if (isLoading)
     return (
       <view>
-        <HexCard id="loading" hexValue="#FFFF55" />
+        <HexCard id="loading" hexValue="#FFFF" isLiked={false} />
       </view>
     );
   if (error || !data)
@@ -36,26 +37,18 @@ const HomePage = () => {
 
   console.log('Fetched hex colors:', data);
   return (
-    <view className="flex-1 px-2 pb-40 justify-center items-center">
-      <list
-        className="h-full w-full"
-        scroll-orientation="vertical"
-        list-type="single"
-        span-count={2}
-        style={{
-          width: '100%',
-          height: '100vh',
-        }}
-      >
+    <view className="flex-1  pb-40 justify-center items-center">
+      <TiktokFeed className="w-full h-full">
         {data.map((hex) => (
-          <list-item
-            item-key={`list-item-${hex.id}`}
-            key={`list-item-${hex.id}`}
-          >
-            <HexCard key={hex.id} id={hex.id} hexValue={hex.hexValue} />
-          </list-item>
+          <HexCard
+            key={hex.id}
+            id={hex.id}
+            hexValue={hex.hexValue}
+            isLiked={hex.isLiked ?? false}
+            likeCount={hex.likeCount}
+          />
         ))}
-      </list>
+      </TiktokFeed>
     </view>
   );
 };

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/HimanshuKumarDutt094/hextok/internal/domains"
+	"github.com/lib/pq"
 )
 
 type LikeStore struct {
@@ -79,3 +80,34 @@ func (r *LikeStore) GetLikedHexesByUser(ctx context.Context, userId int64) ([]do
 	}
 	return likedHexColors, nil
 }
+
+func (r *LikeStore) GetLikeCountsForHexes(ctx context.Context, hexIds []int64) (map[int64]int, error) {
+	// return map[hexId]count
+	if len(hexIds) == 0 {
+		return map[int64]int{}, nil
+	}
+	// build the IN clause placeholders
+	query := `SELECT hexId, COUNT(*) as cnt FROM liked WHERE hexId = ANY($1) GROUP BY hexId`
+	rows, err := r.DB.QueryContext(ctx, query, pq.Array(hexIds))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	counts := make(map[int64]int)
+	for rows.Next() {
+		var hexId int64
+		var cnt int
+		if err := rows.Scan(&hexId, &cnt); err != nil {
+			return nil, err
+		}
+		counts[hexId] = cnt
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return counts, nil
+}
+
+// pqArray converts a slice of int64 into a driver-friendly array for postgres ANY($1)
+// (helper removed; using pq.Array directly)

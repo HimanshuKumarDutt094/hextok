@@ -201,34 +201,41 @@ export function AppWrapper() {
     console.log('🔵 [AppWrapper] Starting initial deep link processing');
     processDeepLinkOnce();
 
-    // After initial blocking check we still keep polling for later deep links
-    const interval = setInterval(async () => {
-      try {
-        const data = await getLastDeepLink();
-        if (data) {
-          console.log('🟢 [DeepLink] Background poll found deep link:', data);
-          // same processing as above could be factored out; for brevity we'll
-          // persist to LocalStorageModule again and let registered listeners act
-          if (
-            typeof NativeModules !== 'undefined' &&
-            NativeModules.LocalStorageModule
-          ) {
-            NativeModules.LocalStorageModule.setStorageItem(
-              'hextok_oauth_deeplink',
-              JSON.stringify(data),
-            );
+    // Only poll for background deep links when the user is NOT authenticated.
+    // If authToken becomes truthy, the effect will re-run and cleanup the interval.
+    let interval: string | number | NodeJS.Timeout | null | undefined;
+    if (!authToken) {
+      interval = setInterval(async () => {
+        try {
+          const data = await getLastDeepLink();
+          if (data) {
+            console.log('🟢 [DeepLink] Background poll found deep link:', data);
+            // persist to LocalStorageModule again and let registered listeners act
+            if (
+              typeof NativeModules !== 'undefined' &&
+              NativeModules.LocalStorageModule
+            ) {
+              NativeModules.LocalStorageModule.setStorageItem(
+                'hextok_oauth_deeplink',
+                JSON.stringify(data),
+              );
+            }
+            clearDeepLink();
           }
-          clearDeepLink();
+        } catch (e) {
+          console.error('❌ [AppWrapper] Background deep link poll error:', e);
         }
-      } catch (e) {
-        console.error('❌ [AppWrapper] Background deep link poll error:', e);
-      }
-    }, 2000);
+      }, 2000);
+    } else {
+      console.log(
+        '🔵 [AppWrapper] Skipping background deep-link polling because user is authenticated',
+      );
+    }
 
     return () => {
       mounted = false;
       console.log('🧹 [AppWrapper] Cleaning up deep link polling');
-      clearInterval(interval);
+      if (interval != null) clearInterval(interval);
     };
   }, [storeToken, setInitialized, authToken]);
 

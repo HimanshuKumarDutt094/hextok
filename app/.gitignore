@@ -22,7 +22,6 @@ tmp
 captures/
 .externalNativeBuild/
 .cxx/
-expo-web-browser-code
 # code coverage
 coverage
 *.lcov

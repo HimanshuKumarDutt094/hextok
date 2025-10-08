@@ -34,8 +34,10 @@ type AuthedUserSchema struct {
 }
 
 type HexResponse struct {
-	Id       int64  `json:"id"`
-	HexValue string `json:"hexValue"`
+	Id        int64  `json:"id"`
+	HexValue  string `json:"hexValue"`
+	LikeCount int    `json:"likeCount,omitempty"`
+	IsLiked   bool   `json:"isLiked,omitempty"`
 }
 
 type NewHexRequest struct {

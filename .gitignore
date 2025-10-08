@@ -6,9 +6,9 @@ out
 dist
 *.tgz
 .gradle
-docs 
+ 
 doc
-webbrowser
+
 tmp
 /app/build/
 /outputs
@@ -33,7 +33,6 @@ app/android/app/build/
 captures/
 .externalNativeBuild/
 .cxx/
-expo-web-browser-code
 # code coverage
 coverage
 *.lcov
