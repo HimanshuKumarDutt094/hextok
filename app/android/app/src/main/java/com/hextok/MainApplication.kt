@@ -146,6 +146,11 @@ class MainApplication : Application() {
                 override fun createUI(context: com.lynx.tasm.behavior.LynxContext) = com.hextok.custom.LynxButton(context)
             })
         } catch (e: Exception) { }
+        try {
+		com.hextok.lynxlinking.LynxLinkingAdapter().init(this)
+	} catch (e: Exception) {
+		// handle or log
+	}
     }
     
     override fun onTerminate() {

@@ -6,7 +6,7 @@ out
 dist
 *.tgz
 .gradle
- 
+docs 
 doc
 
 tmp
@@ -33,7 +33,11 @@ app/android/app/build/
 captures/
 .externalNativeBuild/
 .cxx/
+expo-web-browser-code
 # code coverage
+rewrite.md
+
+docs
 coverage
 *.lcov
 # See http://help.github.com/ignore-files/ for more about ignoring files.

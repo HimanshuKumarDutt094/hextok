@@ -39,6 +39,7 @@ class MainActivity : Activity() {
         
         // Handle deep link if this activity was launched by one
         handleDeepLink(intent)
+        
     }
     
     override fun onNewIntent(intent: Intent?) {
