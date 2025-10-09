@@ -3,7 +3,6 @@ import { useAuth } from './hooks/auth';
 import { getLastDeepLink, clearDeepLink } from './deeplink';
 import { API_BASE } from './config';
 import Router from './routes/router';
-import { DebugModules } from './debug-modules';
 
 /**
  * Main app wrapper that handles native deep links for OAuth callback
@@ -244,7 +243,6 @@ export function AppWrapper() {
   if (!initialized) {
     return (
       <>
-        <DebugModules />
         <view>
           <text>Loading…</text>
         </view>
@@ -254,7 +252,6 @@ export function AppWrapper() {
 
   return (
     <>
-      <DebugModules />
       <Router />
     </>
   );

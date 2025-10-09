@@ -4,11 +4,7 @@
 
 import { useState, useCallback, useEffect } from '@lynx-js/react';
 import { useWebBrowserAuth } from './useWebBrowser';
-import {
-  logOAuthEnvironmentDebugInfo,
-  getNativeModuleDebugInfo,
-  type NativeModuleDebugInfo,
-} from '../utils/debug-native-modules';
+
 import { oauthCookieCapture } from '../utils/cookie-capture';
 import type { WebBrowserAuthSessionResult } from '../rspeedy-env';
 
@@ -18,7 +14,6 @@ export interface MobileOAuthState {
   isAuthenticated: boolean;
   sessionToken: string | null;
   userID: number | null;
-  debugInfo: NativeModuleDebugInfo | null;
 }
 
 export interface MobileOAuthOptions {
@@ -66,7 +61,6 @@ export function useMobileOAuth(options: MobileOAuthOptions) {
     isAuthenticated: false,
     sessionToken: null,
     userID: null,
-    debugInfo: null,
   });
 
   /**
@@ -86,8 +80,6 @@ export function useMobileOAuth(options: MobileOAuthOptions) {
       }
 
       // Log environment info
-      const nativeInfo = getNativeModuleDebugInfo();
-      console.log('Native Environment:', nativeInfo);
 
       console.groupEnd();
     },
@@ -194,7 +186,6 @@ export function useMobileOAuth(options: MobileOAuthOptions) {
         ...prev,
         isLoading: true,
         error: null,
-        debugInfo: getNativeModuleDebugInfo(),
       }));
 
       logMobileOAuthDebug('start');
@@ -314,7 +305,6 @@ export function useMobileOAuth(options: MobileOAuthOptions) {
       isAuthenticated: false,
       sessionToken: null,
       userID: null,
-      debugInfo: null,
     });
     oauthCookieCapture.reset();
     logMobileOAuthDebug('state_cleared');
@@ -346,12 +336,6 @@ export function useMobileOAuth(options: MobileOAuthOptions) {
   /**
    * Initialize debug logging
    */
-  useEffect(() => {
-    if (options.enableDebugLogging) {
-      console.log('📱 Mobile OAuth Hook Initialized');
-      logOAuthEnvironmentDebugInfo();
-    }
-  }, [options.enableDebugLogging]);
 
   return {
     startOAuth,

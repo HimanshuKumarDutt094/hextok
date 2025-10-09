@@ -47,19 +47,6 @@ export const WebBrowserPresentationStyle = {
  * and managing Custom Tabs on Android.
  */
 
-// Re-export types for convenience
-export type {
-  WebBrowserOpenOptions,
-  WebBrowserResult,
-  WebBrowserAuthSessionResult,
-  WebBrowserCustomTabsResults,
-  AuthSessionOpenOptions,
-  MobileOAuthStartOptions,
-  MobileOAuthResult,
-  MobileTokenExchangeRequest,
-  MobileTokenExchangeResponse,
-};
-
 // Export enums
 // (exported above inline)
 
@@ -95,20 +82,17 @@ export async function openBrowserAsync(
 /**
  * Dismisses the presented web browser.
  */
-export async function dismissBrowser(): Promise<{
-  type: typeof WebBrowserResultType.DISMISS;
-}> {
+export async function dismissBrowser(): Promise<WebBrowserResult> {
   'background only';
 
   return new Promise((resolve, reject) => {
     NativeModules.LynxWebBrowserModule.dismissBrowser(
-      (
-        error: string | null,
-        result?: { type: typeof WebBrowserResultType.DISMISS },
-      ) => {
+      (error: string | null, result?: WebBrowserResult) => {
         if (error) {
           reject(new Error(error));
         } else {
+          // Resolve with the provided WebBrowserResult. If native returns
+          // undefined, return a sensible default of dismiss.
           resolve(result ?? { type: WebBrowserResultType.DISMISS });
         }
       },
@@ -185,7 +169,7 @@ export async function warmUpAsync(
 
   return new Promise((resolve, reject) => {
     NativeModules.LynxWebBrowserModule.warmUpAsync(
-      browserPackage,
+      browserPackage ?? null,
       (error: string | null, result?: WebBrowserWarmUpResult) => {
         if (error) {
           reject(new Error(error));
@@ -213,7 +197,7 @@ export async function mayInitWithUrlAsync(
   return new Promise((resolve, reject) => {
     NativeModules.LynxWebBrowserModule.mayInitWithUrlAsync(
       url,
-      browserPackage,
+      browserPackage ?? null,
       (error: string | null, result?: WebBrowserMayInitWithUrlResult) => {
         if (error) {
           reject(new Error(error));
@@ -235,7 +219,7 @@ export async function coolDownAsync(
 
   return new Promise((resolve, reject) => {
     NativeModules.LynxWebBrowserModule.coolDownAsync(
-      browserPackage,
+      browserPackage ?? null,
       (error: string | null, result?: WebBrowserCoolDownResult) => {
         if (error) {
           reject(new Error(error));
@@ -419,27 +403,46 @@ export function registerOAuthCallback(
           try {
             if (!value) return;
             // Attempt to parse stored JSON; if parsing fails, deliver raw string
-            let parsed: any = null;
+            let parsed: unknown = null;
             try {
               parsed = JSON.parse(value);
             } catch {
               parsed = { raw: value };
             }
 
-            // Normalize to MobileOAuthResult shape when possible
+            // Safely extract fields from parsed unknown without using `any`.
+            const asRecord = (p: unknown): Record<string, unknown> =>
+              typeof p === 'object' && p !== null
+                ? (p as Record<string, unknown>)
+                : {};
+
+            const getStr = (
+              p: Record<string, unknown>,
+              k: string,
+            ): string | undefined => {
+              const v = p[k];
+              return typeof v === 'string' ? v : undefined;
+            };
+
+            const pRec = asRecord(parsed);
+            const status = ((): 'success' | 'error' => {
+              const s = getStr(pRec, 'status');
+              if (s === 'success' || s === 'error') return s;
+              return getStr(pRec, 'raw') ? 'success' : 'error';
+            })();
+
             const result: MobileOAuthResult = {
-              status:
-                (parsed.status as 'success' | 'error') ||
-                (parsed.raw ? 'success' : 'error'),
-              token: parsed.token || parsed.raw || undefined,
+              status,
+              token: getStr(pRec, 'token') ?? getStr(pRec, 'raw'),
               userId:
-                parsed.user_id || parsed.userId || parsed.user || undefined,
-              state: parsed.state || undefined,
-              error: parsed.error || undefined,
+                getStr(pRec, 'user_id') ??
+                getStr(pRec, 'userId') ??
+                getStr(pRec, 'user'),
+              state: getStr(pRec, 'state'),
+              error: getStr(pRec, 'error'),
               errorDescription:
-                parsed.error_description ||
-                parsed.errorDescription ||
-                undefined,
+                getStr(pRec, 'error_description') ??
+                getStr(pRec, 'errorDescription'),
             };
 
             // Remove item to ensure single delivery

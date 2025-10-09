@@ -200,6 +200,10 @@ export function useWebBrowser() {
                 setError(error);
               } else if (result) {
                 setResult(result);
+                // Handle browser dismissal/cancellation as an error state
+                if (result.type === 'cancel' || result.type === 'dismiss') {
+                  setError('Browser was closed');
+                }
               }
             },
           );

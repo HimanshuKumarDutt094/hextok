@@ -23,7 +23,7 @@ export function getLastDeepLink(): Promise<{
     }
 
     try {
-      NativeModules.DeepLinkModule.getLastDeepLink((data: unknown) => {
+      NativeModules.DeepLinkModuleSimple.getLastDeepLink((data: unknown) => {
         try {
           console.log(
             '🔍 [getLastDeepLink] native returned raw (expected JSON string):',
@@ -117,7 +117,7 @@ export function clearDeepLink(): void {
   }
 
   try {
-    NativeModules.DeepLinkModule.clearDeepLink();
+    NativeModules.DeepLinkModuleSimple.clearDeepLink();
   } catch (error) {
     console.error('Failed to clear deep link:', error);
   }
@@ -136,7 +136,7 @@ export function hasDeepLink(): Promise<boolean> {
     }
 
     try {
-      NativeModules.DeepLinkModule.hasDeepLink((hasData: boolean) => {
+      NativeModules.DeepLinkModuleSimple.hasDeepLink((hasData: boolean) => {
         resolve(hasData);
       });
     } catch (error) {

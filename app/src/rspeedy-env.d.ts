@@ -111,6 +111,22 @@ export type WebBrowserWarmUpResult = ServiceActionResult;
 export type WebBrowserMayInitWithUrlResult = ServiceActionResult;
 export type WebBrowserCoolDownResult = ServiceActionResult;
 
+// Deep Link types
+export interface DeepLinkData {
+  /** The complete URL that was opened (e.g., "hextok://profile/user123") */
+  url: string;
+  /** The path portion after the scheme (e.g., "/profile/user123") */
+  path: string;
+  /** Query parameters as key-value pairs */
+  queryParams: Record<string, string>;
+  /** The URL scheme used (e.g., "hextok") */
+  scheme: string;
+  /** Host portion if present (e.g., "app" in "hextok://app/home") */
+  host?: string;
+}
+
+export type DeepLinkListener = (jsonData: string) => void;
+
 export interface LynxFileDescriptor {
   uri: string;
   name?: string;
@@ -429,195 +445,8 @@ declare module '@lynx-js/types' {
   }
 }
 
-// Native Module declarations
-declare global {
-  interface LynxSecureStorageModule {
-    open(options?: StorageOptions): Promise<string>;
-    close(handle: string): Promise<void>;
-    get(handle: string, key: string): Promise<string | null>;
-    set(
-      handle: string,
-      key: string,
-      value: string,
-      options?: { ttl?: number | null },
-    ): Promise<void>;
-    remove(handle: string, key: string): Promise<void>;
-    has(handle: string, key: string): Promise<boolean>;
-    setBinary(handle: string, key: string, valueBase64: string): Promise<void>;
-    getBinary(handle: string, key: string): Promise<string | null>;
-    multiGet(
-      handle: string,
-      keys: string[],
-    ): Promise<Array<[string, string | null]>>;
-    multiSet(handle: string, pairs: Array<[string, string]>): Promise<void>;
-    multiRemove(handle: string, keys: string[]): Promise<void>;
-    transaction(
-      handle: string,
-      operations: Array<{
-        type: 'set' | 'remove';
-        key: string;
-        value?: string;
-      }>,
-    ): Promise<void>;
-    clear(handle: string): Promise<void>;
-    getKeys(handle: string): Promise<string[]>;
-    getUsage(handle: string): Promise<{ bytesUsed: number; itemCount: number }>;
-    migrateFromAsyncStorage(handle: string, adapterId?: string): Promise<void>;
-    export(
-      handle: string,
-      options?: { includeMeta?: boolean },
-    ): Promise<string>;
-    import(
-      handle: string,
-      blobBase64: string,
-      options?: { overwrite?: boolean },
-    ): Promise<void>;
-  }
-
-  interface LynxWebBrowserModule {
-    openBrowserAsync(
-      url: string,
-      options: WebBrowserOpenOptions,
-      callback: (error: string | null, result?: WebBrowserResult) => void,
-    ): void;
-    dismissBrowser(
-      callback: (error: string | null, result?: WebBrowserResult) => void,
-    ): void;
-    openAuthSessionAsync(
-      url: string,
-      redirectUrl?: string | null,
-      options: AuthSessionOpenOptions,
-      callback: (
-        error: string | null,
-        result?: WebBrowserAuthSessionResult,
-      ) => void,
-    ): void;
-    dismissAuthSession(): void;
-    getCustomTabsSupportingBrowsersAsync(
-      callback: (
-        error: string | null,
-        result?: WebBrowserCustomTabsResults,
-      ) => void,
-    ): void;
-    warmUpAsync(
-      browserPackage: string | null,
-      callback: (error: string | null, result?: ServiceActionResult) => void,
-    ): void;
-    mayInitWithUrlAsync(
-      url: string,
-      browserPackage: string | null,
-      callback: (error: string | null, result?: ServiceActionResult) => void,
-    ): void;
-    coolDownAsync(
-      browserPackage: string | null,
-      callback: (error: string | null, result?: ServiceActionResult) => void,
-    ): void;
-    maybeCompleteAuthSession(
-      options: Record<string, unknown>,
-      callback: (
-        error: string | null,
-        result?: WebBrowserCompleteAuthSessionResult,
-      ) => void,
-    ): void;
-  }
-
-  interface LynxFilePickerModule {
-    open(options?: {
-      multiple?: boolean;
-      accepts?: string;
-      includeBase64?: boolean;
-    }): Promise<LynxFileDescriptor[]>;
-  }
-
-  interface LynxFilePermissionModule {
-    hasFilePermission(): Promise<boolean>;
-    requestFilePermission(): Promise<boolean>;
-  }
-
-  interface LynxNativeAuthModule {
-    openAuth(
-      url: string,
-      options?: { callbackScheme?: string },
-    ): Promise<{
-      success: boolean;
-      redirectUrl: string;
-      sessionCookie?: string;
-    }>;
-    cancelAuth(): Promise<void>;
-  }
-
-  // Local Storage Module for persistent storage
-  interface LynxLocalStorageModule {
-    setStorageItem(key: string, value: string): void;
-    getStorageItem(key: string, callback: (value: string | null) => void): void;
-    removeStorageItem(key: string): void;
-    clearStorage(): void;
-    getAllKeys(callback: (keys: string[]) => void): void;
-  }
-
-  // Mobile OAuth flow types
-  interface MobileOAuthStartOptions {
-    redirectUri?: string;
-    state: string;
-    baseUrl?: string;
-  }
-
-  interface MobileOAuthResult {
-    status: 'success' | 'error';
-    token?: string;
-    userId?: string;
-    expiresIn?: number;
-    state?: string;
-    error?: string;
-    errorDescription?: string;
-  }
-
-  interface MobileTokenExchangeRequest {
-    token: string;
-  }
-
-  interface MobileTokenExchangeResponse {
-    token: string;
-    expiresIn: number;
-    userId: number;
-    sessionId: number;
-  }
-
-  // Deep link native module interface
-  interface LynxDeepLinkModule {
-    /** Test method to verify module is working */
-    testMethod(): void;
-
-    /** Get the last received deep link data */
-    getLastDeepLink(
-      callback: (
-        data: {
-          url: string;
-          host: string;
-          path: string;
-          queryParams: Record<string, string | null>;
-          timestamp: number;
-        } | null,
-      ) => void,
-    ): void;
-
-    /** Clear the stored deep link data */
-    clearDeepLink(): void;
-
-    /** Check if there is stored deep link data */
-    hasDeepLink(callback: (hasData: boolean) => void): void;
-  } // NativeModules declaration following LynxJS pattern
-  declare let NativeModules: {
-    SecureStorage: LynxSecureStorageModule;
-    FilePicker: LynxFilePickerModule;
-    FilePermission: LynxFilePermissionModule;
-    NativeAuthModule: LynxNativeAuthModule;
-    LynxWebBrowserModule: LynxWebBrowserModule;
-    LocalStorageModule: LynxLocalStorageModule;
-    /** Deep link module added for hextok:// handling */
-    DeepLinkModule: LynxDeepLinkModule;
-  };
-}
+// Native module type declarations were moved to `typing.d.ts`.
+// Keep intrinsic elements and other Lynx types in this file.
 
 // Re-export types for convenience
 export type {
@@ -640,6 +469,8 @@ export type {
   MobileOAuthResult,
   MobileTokenExchangeRequest,
   MobileTokenExchangeResponse,
+  DeepLinkData,
+  DeepLinkListener,
 };
 
 // This export makes the file a module

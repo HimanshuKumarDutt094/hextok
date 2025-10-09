@@ -2,8 +2,22 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Allow querying for document/open intents on Android 11+ to ensure the picker intent is resolvable -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.OPEN_DOCUMENT" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.OPENABLE" />
+            <data android:mimeType="*/*" />
+        </intent>
+    </queries>
+
     <!-- Allow network access to fetch dev server bundle -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Storage permissions: READ_EXTERNAL_STORAGE for older Android; READ_MEDIA_* for Android 13+ -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
 
     <!-- Allow cleartext HTTP traffic for development server (dev only) -->
     <application
@@ -38,6 +52,17 @@
                 <data android:scheme="hextok" />
             </intent-filter>
         </activity>
+        
+        <!-- File picker activity used by FilePicker native module -->
+        <activity
+            android:name="com.hextok.filepicker.FilePickerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Hextok" />
+        <!-- Permission request activity used by FilePermissionModule -->
+        <activity
+            android:name="com.hextok.filepicker.PermissionRequestActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Hextok" />
     </application>
 
 </manifest>

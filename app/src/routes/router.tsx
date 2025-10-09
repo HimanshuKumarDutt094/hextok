@@ -1,3 +1,5 @@
+import React, { useMemo, useCallback } from 'react';
+import type { DeepLinkData } from '../rspeedy-env';
 import {
   MemoryRouter,
   Route,
@@ -6,11 +8,12 @@ import {
   Navigate,
 } from 'react-router';
 import { useAuth } from '../hooks/auth';
+import { useDeepLink } from '../hooks/useDeepLink';
 import LoginPage from './(unauth)/login/login-page';
-import HomePage from './(auth)/home/home-page';
 import LikedPage from './(auth)/liked/liked-page';
 import ProfilePage from './(auth)/profile/profile-page';
 import BottomTabs from './(auth)/home/bottom-tabs';
+import HomePage from './(auth)/home/home-page';
 
 // Inner router component that can use hooks
 const RouterContent = () => {
@@ -18,6 +21,33 @@ const RouterContent = () => {
 
   const location = useLocation();
   const { isLoading, isAuthenticated, error } = useAuth();
+
+  // Set up deep link handling
+  // Memoize protected routes so the reference is stable between renders
+  const protectedRoutes = useMemo(() => ['/profile', '/liked'], []);
+
+  // Memoize the custom deep link handler so it doesn't get recreated every render
+  const onDeepLink = useCallback(
+    (data: DeepLinkData) => {
+      console.log('🔗 [Router] Custom deep link handler:', data);
+      console.log('🔗 [Router] Auth state during deep link:', {
+        isAuthenticated,
+        isLoading,
+      });
+      // Return undefined to use default route conversion
+      return undefined;
+    },
+    // Only recreate when auth state changes
+    [isAuthenticated, isLoading],
+  );
+
+  useDeepLink({
+    autoNavigate: true,
+    isAuthenticated,
+    isAuthLoading: isLoading,
+    protectedRoutes,
+    onDeepLink,
+  });
 
   console.log('🔍 [Router] Auth state:', {
     isLoading,

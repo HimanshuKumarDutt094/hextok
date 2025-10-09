@@ -45,7 +45,11 @@ class MainActivity : Activity() {
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         // Handle deep link when app is already running
-        intent?.let { handleDeepLink(it) }
+        intent?.let { 
+            handleDeepLink(it)
+            // Also notify listeners for runtime deep links
+            com.hextok.deeplink.DeepLinkModule.handleNewIntent(it)
+        }
     }
 
     private fun handleDeepLink(intent: Intent) {
@@ -54,7 +58,10 @@ class MainActivity : Activity() {
             Log.d("MainActivity", "Deep link received: $data")
             // Store deep link data for JavaScript to retrieve
             try {
-                com.hextok.deeplink.DeepLinkModule.storeDeepLink(data)
+                // Store in the simple module (using storeDeepLink method)
+                com.hextok.deeplink.DeepLinkModuleSimple.storeDeepLink(data)
+                // Store in the advanced module (using setInitialIntent method)
+                com.hextok.deeplink.DeepLinkModule.setInitialIntent(intent)
                 Log.d("MainActivity", "Deep link stored successfully")
             } catch (e: Exception) {
                 Log.e("MainActivity", "Failed to store deep link", e)

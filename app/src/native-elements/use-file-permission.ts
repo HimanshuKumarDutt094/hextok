@@ -2,78 +2,124 @@
 // Hook uses Lynx native module APIs and should be invoked from background-only code per docs.
 import { useCallback, useState } from '@lynx-js/react';
 
-// Updated types for error-first callback pattern
-type PermModuleMethod = (
-  callback: (
-    error: { code: string; message: string } | null,
-    result?: boolean,
-  ) => void,
-) => void;
-
-type PermModule = {
-  hasFilePermission?: PermModuleMethod;
-  requestFilePermission?: PermModuleMethod;
-};
-
-function getPermModule(): PermModule | undefined {
-  const g = globalThis as unknown as Record<string, unknown>;
-  if ('Lynx' in g) {
-    const lynx = g['Lynx'] as unknown as Record<string, unknown> | undefined;
-    if (lynx && 'modules' in lynx) {
-      const modules = lynx['modules'] as unknown as Record<string, unknown>;
-      return modules['FilePermission'] as PermModule | undefined;
-    }
-  }
-
-  if ('NativeModules' in g) {
-    const nm = g['NativeModules'] as unknown as Record<string, unknown>;
-    return nm['FilePermission'] as PermModule | undefined;
-  }
-
-  return undefined;
-}
-
 export function useFilePermission() {
   const [granted, setGranted] = useState<boolean | null>(null);
 
   const check = useCallback(async () => {
-    const m = getPermModule();
-    if (!m || typeof m.hasFilePermission !== 'function') {
-      setGranted(null);
-      return null;
-    }
+    const start = Date.now();
+    const m = NativeModules.FilePermissionModule;
+    console.debug(
+      '[useFilePermission] check() called at',
+      new Date(start).toISOString(),
+      { grantedBefore: granted },
+    );
+    console.debug('[useFilePermission] native module present?', !!m, {
+      moduleKeys: m ? Object.keys(m) : null,
+    });
 
     return new Promise<boolean | null>((resolve) => {
-      m.hasFilePermission!((error, result) => {
-        if (error) {
-          setGranted(null);
-          resolve(null);
-        } else {
-          const hasPermission = result ?? false;
-          setGranted(hasPermission);
-          resolve(hasPermission);
-        }
-      });
+      try {
+        console.debug(
+          '[useFilePermission] invoking native hasFilePermission at',
+          Date.now(),
+        );
+        m.hasFilePermission((error, result) => {
+          const ts = Date.now();
+          if (error) {
+            console.warn('[useFilePermission] hasFilePermission -> ERROR', {
+              timestamp: new Date(ts).toISOString(),
+              error,
+              durationMs: ts - start,
+            });
+            setGranted(false);
+            resolve(false);
+          } else {
+            const hasPermission = (result ?? false) as boolean;
+            console.debug('[useFilePermission] hasFilePermission -> RESULT', {
+              timestamp: new Date(ts).toISOString(),
+              result: hasPermission,
+              rawResult: result,
+              durationMs: ts - start,
+            });
+            setGranted(hasPermission);
+            resolve(hasPermission);
+          }
+        });
+      } catch (e) {
+        const ts = Date.now();
+        console.warn('[useFilePermission] hasFilePermission threw exception', {
+          timestamp: new Date(ts).toISOString(),
+          exception: e,
+          durationMs: ts - start,
+        });
+        setGranted(false);
+        resolve(false);
+      }
     });
-  }, []);
+  }, [granted]);
 
   const request = useCallback(async () => {
-    const m = getPermModule();
+    const start = Date.now();
+    const m = NativeModules.FilePermissionModule;
+    console.debug(
+      '[useFilePermission] request() called at',
+      new Date(start).toISOString(),
+    );
+    console.debug('[useFilePermission] native module present?', !!m, {
+      moduleKeys: m ? Object.keys(m) : null,
+    });
+
     if (!m || typeof m.requestFilePermission !== 'function') {
+      console.warn(
+        '[useFilePermission] native requestFilePermission not available',
+      );
       return false;
     }
 
     return new Promise<boolean>((resolve) => {
-      m.requestFilePermission!((error, result) => {
-        if (error) {
-          setGranted(false);
-          resolve(false);
-        } else {
-          const isGranted = result ?? false;
-          setGranted(isGranted);
-          resolve(isGranted);
-        }
-      });
+      try {
+        console.debug(
+          '[useFilePermission] invoking native requestFilePermission at',
+          Date.now(),
+        );
+        m.requestFilePermission((error, result) => {
+          const ts = Date.now();
+          if (error) {
+            console.warn('[useFilePermission] requestFilePermission -> ERROR', {
+              timestamp: new Date(ts).toISOString(),
+              error,
+              durationMs: ts - start,
+            });
+            setGranted(false);
+            resolve(false);
+          } else {
+            const isGranted = (result ?? false) as boolean;
+            console.debug(
+              '[useFilePermission] requestFilePermission -> RESULT',
+              {
+                timestamp: new Date(ts).toISOString(),
+                result: isGranted,
+                rawResult: result,
+                durationMs: ts - start,
+              },
+            );
+            setGranted(isGranted);
+            resolve(isGranted);
+          }
+        });
+      } catch (e) {
+        const ts = Date.now();
+        console.warn(
+          '[useFilePermission] requestFilePermission threw exception',
+          {
+            timestamp: new Date(ts).toISOString(),
+            exception: e,
+            durationMs: ts - start,
+          },
+        );
+        setGranted(false);
+        resolve(false);
+      }
     });
   }, []);
 

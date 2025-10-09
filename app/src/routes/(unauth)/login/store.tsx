@@ -18,7 +18,7 @@ export function StorageTest() {
   const getStorage = () => {
     NativeModules.LocalStorageModule.getStorageItem(
       'testKey',
-      (value: string) => {
+      (value: string | null) => {
         setStoredValue(value);
       },
     );

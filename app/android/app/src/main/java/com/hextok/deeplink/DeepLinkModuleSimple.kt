@@ -12,10 +12,10 @@ import org.json.JSONObject
 /**
  * Simple DeepLinkModule for Lynx - just stores and retrieves deep link data
  */
-class DeepLinkModule(context: Context) : LynxModule(context) {
+class DeepLinkModuleSimple(context: Context) : LynxModule(context) {
     
     companion object {
-        private const val TAG = "DeepLinkModule"
+        private const val TAG = "DeepLinkModuleSimple"
         private var lastDeepLinkData: HashMap<String, Any>? = null
         private var lastDeepLinkJson: String? = null
 

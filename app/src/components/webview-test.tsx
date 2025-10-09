@@ -1,10 +1,5 @@
 import type { ReactElement } from '@lynx-js/react';
-import { useEffect } from '@lynx-js/react';
 import { useWebBrowser, useWebView } from '../hooks/useWebBrowser';
-import {
-  logNativeModuleDebugInfo,
-  getNativeModuleDebugInfo,
-} from '../utils/debug-native-modules';
 
 // Component for individual WebView list items
 const WebViewItem = ({
@@ -48,12 +43,6 @@ export default function WebViewTest(): ReactElement {
     reload,
   } = useWebView();
 
-  // Debug native module availability on component mount
-  useEffect(() => {
-    logNativeModuleDebugInfo();
-  }, []);
-
-  const debugInfo = getNativeModuleDebugInfo();
   const webViewConfigs = [
     {
       title: 'Test 0 (WebBrowser test controls and logs)',
@@ -99,15 +88,6 @@ export default function WebViewTest(): ReactElement {
             </view>
 
             <view
-              className="px-4 py-2 mr-2 bg-purple-600 rounded"
-              bindtap={() => {
-                logNativeModuleDebugInfo();
-              }}
-            >
-              <text className="text-white">Debug Log</text>
-            </view>
-
-            <view
               className="px-4 py-2 bg-gray-600 rounded"
               bindtap={() => {
                 dismissBrowser();
@@ -115,41 +95,6 @@ export default function WebViewTest(): ReactElement {
             >
               <text className="text-white">Dismiss Browser</text>
             </view>
-          </view>
-
-          <view style={{ marginTop: '8px' }}>
-            <text
-              style={{
-                fontSize: '14px',
-                fontWeight: '600',
-                marginBottom: '4px',
-              }}
-            >
-              Debug Info:
-            </text>
-            <text
-              style={{ fontSize: '12px', color: '#666', marginBottom: '2px' }}
-            >
-              Environment: {debugInfo.environment}
-            </text>
-            <text
-              style={{ fontSize: '12px', color: '#666', marginBottom: '2px' }}
-            >
-              NativeModules Available:{' '}
-              {debugInfo.isNativeModulesAvailable ? 'Yes' : 'No'}
-            </text>
-            <text
-              style={{ fontSize: '12px', color: '#666', marginBottom: '2px' }}
-            >
-              LynxWebBrowserModule:{' '}
-              {debugInfo.hasLynxWebBrowserModule ? '✅ Found' : '❌ Missing'}
-            </text>
-            <text
-              style={{ fontSize: '12px', color: '#666', marginBottom: '2px' }}
-            >
-              Available Modules:{' '}
-              {debugInfo.availableModules.join(', ') || 'None'}
-            </text>
           </view>
 
           <view style={{ marginTop: '8px' }}>

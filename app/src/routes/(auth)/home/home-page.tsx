@@ -1,4 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
+import { useEffect } from '@lynx-js/react';
+import { useLocation } from 'react-router';
 import { authenticatedFetcher, queryKeys } from '../../../query';
 import { API_BASE } from '../../../config';
 import { type HexResponse } from '../../../schemas/types';
@@ -8,6 +10,13 @@ import TiktokFeed from '../../../components/tiktok-feed';
 
 const HomePage = () => {
   const { authToken } = useAuth();
+  const location = useLocation();
+
+  // Debug location changes
+  useEffect(() => {
+    console.log('🏠 [HomePage] Location changed:', location.pathname);
+    console.log('🏠 [HomePage] Location state:', location.state);
+  }, [location]);
 
   const { data, isLoading, error } = useQuery({
     queryKey: queryKeys.hexColors,
@@ -22,6 +31,7 @@ const HomePage = () => {
     },
     enabled: !!authToken, // Only run query when we have a token
   });
+
   if (isLoading)
     return (
       <view>

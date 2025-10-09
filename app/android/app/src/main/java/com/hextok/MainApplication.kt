@@ -90,23 +90,20 @@ class MainApplication : Application() {
         } catch (e: Exception) {
             // registration failure should not crash the app; log if needed
         }
-        // Register FilePicker native module
+        // Register FilePicker and FilePermission modules via adapter
         try {
-            LynxEnv.inst().registerModule("FilePicker", com.hextok.filepicker.FilePickerModule::class.java)
+            com.hextok.filepicker.LynxFilePickerAdapter().init(this)
+            android.util.Log.d("MainApplication", "FilePicker adapter initialized")
         } catch (e: Exception) {
-            // ignore
-        }
-        // Register FilePermission native module
-        try {
-            LynxEnv.inst().registerModule("FilePermission", com.hextok.filepicker.FilePermissionModule::class.java)
-        } catch (e: Exception) {
-            // ignore
+            android.util.Log.e("MainApplication", "Failed to initialize FilePicker adapter", e)
         }
       
         // Register DeepLink native module so JS can register callbacks
         try {
             android.util.Log.d("MainApplication", "Attempting to register DeepLinkModule...")
+            LynxEnv.inst().registerModule("DeepLinkModuleSimple", com.hextok.deeplink.DeepLinkModuleSimple::class.java)
             LynxEnv.inst().registerModule("DeepLinkModule", com.hextok.deeplink.DeepLinkModule::class.java)
+
             android.util.Log.d("MainApplication", "DeepLinkModule registered successfully!")
         } catch (e: Exception) {
             android.util.Log.e("MainApplication", "Failed to register DeepLinkModule", e)

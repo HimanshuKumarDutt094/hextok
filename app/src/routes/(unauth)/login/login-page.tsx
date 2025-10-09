@@ -1,7 +1,6 @@
-import { useState, useCallback } from '@lynx-js/react';
+import { useState, useCallback, useEffect } from '@lynx-js/react';
 import { useWebBrowser } from '../../../hooks/useWebBrowser';
 import { API_BASE } from '../../../config';
-import { StorageTest } from './store';
 
 const LoginPage = () => {
   const [status, setStatus] = useState<
@@ -9,7 +8,12 @@ const LoginPage = () => {
   >('idle');
   const [errorMessage, setErrorMessage] = useState<string>('');
 
-  const { openBrowser, isLoading, error: browserError } = useWebBrowser();
+  const {
+    openBrowser,
+    isLoading,
+    error: browserError,
+    result,
+  } = useWebBrowser();
 
   // Generate a random state for OAuth security
   const generateState = useCallback(() => {
@@ -21,7 +25,18 @@ const LoginPage = () => {
     }
     return result;
   }, []);
-
+  useEffect(() => {
+    if (browserError) {
+      setStatus('error');
+      setErrorMessage(browserError);
+    } else if (
+      result &&
+      (result.type === 'cancel' || result.type === 'dismiss')
+    ) {
+      setStatus('idle');
+      setErrorMessage('');
+    }
+  }, [browserError, result]);
   const handleLogin = useCallback(() => {
     setStatus('authenticating');
     setErrorMessage('');
