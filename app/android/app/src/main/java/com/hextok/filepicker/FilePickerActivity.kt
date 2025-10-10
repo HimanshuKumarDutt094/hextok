@@ -24,14 +24,15 @@ class FilePickerActivity : Activity() {
     }
 
     private var requestId: String? = null
+    private var includeBase64: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Read extras from the Activity intent (not a newly created Intent)
-        val multiple = intentFromExtrasBoolean("multiple", false)
-        val accepts = intentFromExtrasString("accepts")
-        val includeBase64 = intentFromExtrasBoolean("includeBase64", false)
-        requestId = intentFromExtrasString("requestId")
+    val multiple = intentFromExtrasBoolean("multiple", false)
+    val accepts = intentFromExtrasString("accepts")
+    includeBase64 = intentFromExtrasBoolean("includeBase64", false)
+    requestId = intentFromExtrasString("requestId")
 
         val pickIntent = Intent(Intent.ACTION_OPEN_DOCUMENT)
         pickIntent.addCategory(Intent.CATEGORY_OPENABLE)
@@ -67,9 +68,13 @@ class FilePickerActivity : Activity() {
             finish()
             return
         }
+    val requestId = try { intent.getStringExtra("requestId") } catch (e: Exception) { null }
+    try { android.util.Log.d("FilePickerActivity", "onActivityResult requestId=$requestId resultCode=$resultCode dataPresent=${data != null}") } catch (ignored: Exception) {}
 
         if (resultCode != RESULT_OK || data == null) {
             try { android.util.Log.i("FilePickerActivity", "User cancelled file picker or no data") } catch (ignored: Exception) {}
+            // Deliver null result to JS to indicate cancel
+            try { FilePickerModule.deliverResult(requestId, null) } catch (ignored: Exception) {}
             finish()
             return
         }
@@ -82,14 +87,14 @@ class FilePickerActivity : Activity() {
                 for (i in 0 until clip.itemCount) {
                     val uri = clip.getItemAt(i).uri
                     persistUriIfPossible(uri, data)
-                    val fi = uriToMap(uri, true, shouldCopyToCache())
+                    val fi = uriToMap(uri, includeBase64, shouldCopyToCache())
                     out.add(fi)
                 }
             } else {
                 val uri: Uri? = data.data
                 if (uri != null) {
                     persistUriIfPossible(uri, data)
-                    val fi = uriToMap(uri, true, shouldCopyToCache())
+                    val fi = uriToMap(uri, includeBase64, shouldCopyToCache())
                     out.add(fi)
                 }
             }
@@ -99,6 +104,8 @@ class FilePickerActivity : Activity() {
             try { android.util.Log.e("FilePickerActivity", "ERROR_READING_FILES: " + e.message, e) } catch (ignored: Exception) {}
         }
 
+        // Deliver the result to the module which will call the stored callback
+        try { FilePickerModule.deliverResult(requestId, out) } catch (ignored: Exception) {}
         finish()
     }
 

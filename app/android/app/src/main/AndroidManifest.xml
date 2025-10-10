@@ -63,6 +63,12 @@
             android:name="com.hextok.filepicker.PermissionRequestActivity"
             android:exported="false"
             android:theme="@style/Theme.Hextok" />
+        <!-- Fullscreen video activity for native video element -->
+        <activity
+            android:name="com.hextok.custom.video.FullscreenVideoActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Hextok"
+            android:screenOrientation="sensorLandscape" />
     </application>
 
 </manifest>

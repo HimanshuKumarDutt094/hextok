@@ -109,6 +109,14 @@ interface FilePickerModule {
       result?: LynxFileDescriptor[],
     ) => void,
   ): void;
+
+  // Diagnostic method added for native<->JS mapping tests
+  diagnosticReturnComplex(
+    callback: (
+      error: { code: string; message: string } | null,
+      result?: Array<{ name: string; size: number }>,
+    ) => void,
+  ): void;
 }
 
 interface FilePermissionModule {

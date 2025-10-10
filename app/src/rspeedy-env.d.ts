@@ -369,6 +369,34 @@ declare module '@lynx-js/types' {
       className?: string;
     };
 
+    // Native 'video' element (custom Lynx behavior)
+    video: {
+      // id?: string;
+      src: string;
+      // 'video-src'?: string;
+      // controls?: boolean;
+      // autoplay?: boolean;
+      // loop?: boolean;
+      // muted?: boolean;
+      // poster?: string;
+      // // Event bindings
+      // bindloadstart?: (
+      //   e: Lynx.BaseEvent<'loadstart', Record<string, unknown>>,
+      // ) => void;
+      // bindloadeddata?: (
+      //   e: Lynx.BaseEvent<'loadeddata', Record<string, unknown>>,
+      // ) => void;
+      // bindcanplay?: (
+      //   e: Lynx.BaseEvent<'canplay', Record<string, unknown>>,
+      // ) => void;
+      // bindplay?: (e: Lynx.BaseEvent<'play', Record<string, unknown>>) => void;
+      // bindpause?: (e: Lynx.BaseEvent<'pause', Record<string, unknown>>) => void;
+      // bindended?: (e: Lynx.BaseEvent<'ended', Record<string, unknown>>) => void;
+      // binderror?: (e: Lynx.BaseEvent<'error', Record<string, unknown>>) => void;
+      // style?: string | Lynx.CSSProperties;
+      // className?: string;
+    };
+
     'chart-view': {
       id?: string;
       data?: Array<Record<string, unknown>>;

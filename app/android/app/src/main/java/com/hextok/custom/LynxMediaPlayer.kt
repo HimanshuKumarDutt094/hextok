@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.widget.MediaController
 import android.widget.VideoView
+import androidx.core.net.toUri // Import the KTX extension function
 import com.lynx.tasm.behavior.LynxContext
 import com.lynx.tasm.behavior.LynxProp
 import com.lynx.tasm.behavior.LynxUIMethod
@@ -46,7 +47,7 @@ class LynxMediaPlayer(context: LynxContext) : LynxUI<VideoView>(context) {
   fun setSrc(url: String) {
     if (url != currentUrl) {
       currentUrl = url
-      val uri = Uri.parse(url)
+      val uri = url.toUri() // Using the KTX extension function
       mView.setVideoURI(uri)
     }
   }

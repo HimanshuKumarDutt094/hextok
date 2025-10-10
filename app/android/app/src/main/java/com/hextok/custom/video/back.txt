@@ -1,0 +1,254 @@
+package com.hextok.custom.video
+
+import android.content.Context
+import android.content.Intent
+import android.media.MediaPlayer
+import android.net.Uri
+import android.view.GestureDetector
+import android.view.MotionEvent
+import android.view.SurfaceHolder
+import android.view.SurfaceView
+import android.view.View
+import android.widget.FrameLayout
+import android.widget.MediaController
+import com.lynx.react.bridge.Callback
+import com.lynx.react.bridge.ReadableMap
+import com.lynx.tasm.behavior.LynxContext
+import com.lynx.tasm.behavior.LynxProp
+import com.lynx.tasm.behavior.LynxUIMethod
+import com.lynx.tasm.behavior.LynxUIMethodConstants
+import com.lynx.tasm.behavior.ui.LynxUI
+import com.lynx.tasm.event.LynxCustomEvent
+import androidx.core.net.toUri
+
+/**
+ * A Lynx native video element implementation using SurfaceView and MediaPlayer.
+ * Supports properties: src, autoplay, muted, loop, controls
+ * Supports methods: play, pause, seekTo, enterFullscreen, exitFullscreen
+ */
+class LynxVideo(context: LynxContext) : LynxUI<FrameLayout>(context) {
+
+  private var mediaPlayer: MediaPlayer? = null
+  private var surfaceView: SurfaceView? = null
+  private var mediaController: MediaController? = null
+  private var currentUri: Uri? = null
+//  private var isPrepared = false
+//  private var shouldAutoplay = false
+//  private var isMuted = false
+//  private var isLooping = false
+//  private var showControls = true
+
+  override fun createView(context: Context): FrameLayout {
+    val container = FrameLayout(context)
+
+    surfaceView = SurfaceView(context).apply {
+      layoutParams = FrameLayout.LayoutParams(
+        FrameLayout.LayoutParams.MATCH_PARENT,
+        FrameLayout.LayoutParams.MATCH_PARENT
+      )
+      holder.addCallback(object : SurfaceHolder.Callback {
+        override fun surfaceCreated(holder: SurfaceHolder) {
+          mediaPlayer?.setDisplay(holder)
+        }
+
+        override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {}
+
+        override fun surfaceDestroyed(holder: SurfaceHolder) {
+          // detach display
+          mediaPlayer?.setDisplay(null)
+        }
+      })
+      // show/hide media controller on tap
+//      val gesture = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
+//        override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+//          if (showControls) {
+//            mediaController?.let { mc ->
+//              if (mc.isShowing) mc.hide() else mc.show()
+//            }
+//          }
+//          return true
+//        }
+//      })
+//
+//      setOnTouchListener { _, ev ->
+//        gesture.onTouchEvent(ev)
+//        true
+//      }
+    }
+
+    mediaController = MediaController(context).apply {
+      isEnabled = true
+    }
+
+    container.addView(surfaceView)
+
+    // initialize media player lazily
+    initMediaPlayerIfNeeded()
+
+    return container
+  }
+
+  private fun initMediaPlayerIfNeeded() {
+    if (mediaPlayer != null) return
+    mediaPlayer = MediaPlayer().apply {
+//      setOnPreparedListener { mp ->
+//        isPrepared = true
+        // apply mute
+//        mp.setVolume(if (isMuted) 0f else 1f, if (isMuted) 0f else 1f)
+//        mp.isLooping = isLooping
+//        emitEvent("prepared", mapOf(
+//          "duration" to mp.duration
+//        ))
+//        if (shouldAutoplay) {
+//          start()
+//          emitEvent("play", emptyMap())
+//        }
+//      }
+//
+//      setOnCompletionListener {
+//        emitEvent("ended", emptyMap())
+//      }
+//
+//      setOnErrorListener { _, what, extra ->
+//        emitEvent("error", mapOf("what" to what, "extra" to extra))
+//        true
+//      }
+    }
+  }
+
+  @LynxProp(name = "src")
+  fun setSrc(src: String) {
+    try {
+      if (src.isNotEmpty()) {
+        val uri = src.toUri()
+        if (uri != currentUri) {
+          currentUri = uri
+//        isPrepared = false
+        initMediaPlayerIfNeeded()
+        mediaPlayer?.reset()
+        mediaPlayer?.setDataSource(lynxContext.context, uri)
+        surfaceView?.holder?.let { mediaPlayer?.setDisplay(it) }
+        mediaPlayer?.prepareAsync()
+        }
+      }
+    } catch (e: Exception) {
+//      emitEvent("error", mapOf("message" to (e.message ?: "unknown")))
+    }
+  }
+
+//  @LynxProp(name = "video-src")
+//  fun setVideoSrc(src: String?) {
+//    setSrc(src)
+//  }
+
+//  @LynxProp(name = "autoplay")
+//  fun setAutoplay(autoplay: Boolean) {
+//    shouldAutoplay = autoplay
+//    if (autoplay && isPrepared) {
+//      mediaPlayer?.start()
+//      emitEvent("play", emptyMap())
+//    }
+//  }
+
+//  @LynxProp(name = "auto-play")
+//  fun setAutoplayHyphen(autoplay: Boolean) {
+//    setAutoplay(autoplay)
+//  }
+
+//  @LynxProp(name = "muted")
+//  fun setMuted(muted: Boolean) {
+//    isMuted = muted
+//    mediaPlayer?.setVolume(if (muted) 0f else 1f, if (muted) 0f else 1f)
+//  }
+//
+//  @LynxProp(name = "loop")
+//  fun setLoop(loop: Boolean) {
+//    isLooping = loop
+//    mediaPlayer?.isLooping = loop
+//  }
+//
+//  @LynxProp(name = "controls")
+//  fun setControls(controls: Boolean) {
+//    showControls = controls
+//    mediaController?.isEnabled = controls
+//  }
+//
+//  @LynxUIMethod
+//  fun play(params: ReadableMap, callback: Callback) {
+//    if (isPrepared) {
+//      mediaPlayer?.start()
+//      callback.invoke(LynxUIMethodConstants.SUCCESS)
+//      emitEvent("play", emptyMap())
+//    } else {
+//      shouldAutoplay = true
+//      callback.invoke(LynxUIMethodConstants.SUCCESS)
+//    }
+//  }
+//
+//  @LynxUIMethod
+//  fun pause(params: ReadableMap, callback: Callback) {
+//    if (isPrepared && mediaPlayer?.isPlaying == true) {
+//      mediaPlayer?.pause()
+//      callback.invoke(LynxUIMethodConstants.SUCCESS)
+//      emitEvent("pause", emptyMap())
+//    } else {
+//      callback.invoke(LynxUIMethodConstants.SUCCESS)
+//    }
+//  }
+//
+//  @LynxUIMethod
+//  fun seekTo(params: ReadableMap, callback: Callback) {
+//    try {
+//      val position = params.getInt("position")
+//      if (isPrepared) {
+//        mediaPlayer?.seekTo(position)
+//        callback.invoke(LynxUIMethodConstants.SUCCESS)
+//      } else {
+//        callback.invoke(LynxUIMethodConstants.UNKNOWN, "not prepared")
+//      }
+//    } catch (e: Exception) {
+//      callback.invoke(LynxUIMethodConstants.PARAM_INVALID, e.message)
+//    }
+//  }
+//
+//  @LynxUIMethod
+//  fun enterFullscreen(params: ReadableMap, callback: Callback) {
+//    try {
+//      currentUri?.let { uri ->
+//        val ctx = lynxContext.context
+//        val intent = Intent(ctx, FullscreenVideoActivity::class.java).apply {
+//          putExtra(FullscreenVideoActivity.EXTRA_URI, uri.toString())
+//          putExtra(FullscreenVideoActivity.EXTRA_MUTED, isMuted)
+//          putExtra(FullscreenVideoActivity.EXTRA_LOOP, isLooping)
+//        }
+//        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+//        ctx.startActivity(intent)
+//        callback.invoke(LynxUIMethodConstants.SUCCESS)
+//      } ?: run {
+//        callback.invoke(LynxUIMethodConstants.UNKNOWN, "no src")
+//      }
+//    } catch (e: Exception) {
+//      callback.invoke(LynxUIMethodConstants.UNKNOWN, e.message)
+//    }
+//  }
+//
+//  private fun emitEvent(name: String, detail: Map<String, Any>) {
+//    try {
+//      val event = LynxCustomEvent(sign, name)
+//      detail.forEach { (k, v) -> event.addDetail(k, v) }
+//      lynxContext.eventEmitter.sendCustomEvent(event)
+//    } catch (_: Exception) { }
+//  }
+//
+//  override fun onLayoutUpdated() {
+//    super.onLayoutUpdated()
+//    // apply padding and border widths so Lynx CSS height/width and radius take effect
+//    val paddingTop = mPaddingTop + mBorderTopWidth
+//    val paddingBottom = mPaddingBottom + mBorderBottomWidth
+//    val paddingLeft = mPaddingLeft + mBorderLeftWidth
+//    val paddingRight = mPaddingRight + mBorderRightWidth
+//    mView.setPadding(paddingLeft, paddingTop, paddingRight, paddingBottom)
+//    // Note: rounding corners on SurfaceView may require ViewOutlineProvider or using TextureView instead.
+//  }
+
+}

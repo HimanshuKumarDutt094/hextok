@@ -10,6 +10,7 @@ import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.imagepipeline.core.ImagePipelineConfig
 import com.facebook.imagepipeline.memory.PoolConfig
 import com.facebook.imagepipeline.memory.PoolFactory
+import com.hextok.custom.video.LynxVideo
 import com.lynx.devtoolwrapper.LynxDevtoolGlobalHelper
 import com.lynx.service.devtool.LynxDevToolService
 import com.lynx.service.image.LynxImageService
@@ -18,12 +19,15 @@ import com.lynx.tasm.LynxEnv
 import com.lynx.tasm.service.LynxServiceCenter
 import com.lynx.service.http.LynxHttpService
 import com.hextok.webbrowser.LynxWebBrowserRegistration
+import com.lynx.tasm.behavior.Behavior
+import com.lynx.tasm.behavior.LynxContext
+
 
 class MainApplication : Application() {
-    
+
     // Activity tracking for browser state management
     private val runningActivities = ArrayList<Class<*>>()
-    
+
     // Activity lifecycle callbacks for tracking active activities
 
     /**
@@ -32,7 +36,7 @@ class MainApplication : Application() {
     fun isActivityInBackStack(cls: Class<*>?): Boolean {
         return runningActivities.contains(cls)
     }
-    
+
     override fun onCreate() {
         super.onCreate()
         initLynxService()
@@ -80,13 +84,19 @@ class MainApplication : Application() {
         }
         // Register our NativeAuthModule so Lynx frontend can call openAuth / cancelAuth
         try {
-            LynxEnv.inst().registerModule("NativeAuthModule", com.hextok.nativeauth.NativeAuthModule::class.java)
+            LynxEnv.inst().registerModule(
+                "NativeAuthModule",
+                com.hextok.nativeauth.NativeAuthModule::class.java
+            )
         } catch (e: Exception) {
             // registration failure should not crash the app; log if needed
         }
         // Register SecureStorage native module
         try {
-            LynxEnv.inst().registerModule("SecureStorage", com.hextok.securestorage.SecureStorageModule::class.java)
+            LynxEnv.inst().registerModule(
+                "SecureStorage",
+                com.hextok.securestorage.SecureStorageModule::class.java
+            )
         } catch (e: Exception) {
             // registration failure should not crash the app; log if needed
         }
@@ -97,12 +107,16 @@ class MainApplication : Application() {
         } catch (e: Exception) {
             android.util.Log.e("MainApplication", "Failed to initialize FilePicker adapter", e)
         }
-      
+
         // Register DeepLink native module so JS can register callbacks
         try {
             android.util.Log.d("MainApplication", "Attempting to register DeepLinkModule...")
-            LynxEnv.inst().registerModule("DeepLinkModuleSimple", com.hextok.deeplink.DeepLinkModuleSimple::class.java)
-            LynxEnv.inst().registerModule("DeepLinkModule", com.hextok.deeplink.DeepLinkModule::class.java)
+            LynxEnv.inst().registerModule(
+                "DeepLinkModuleSimple",
+                com.hextok.deeplink.DeepLinkModuleSimple::class.java
+            )
+            LynxEnv.inst()
+                .registerModule("DeepLinkModule", com.hextok.deeplink.DeepLinkModule::class.java)
 
             android.util.Log.d("MainApplication", "DeepLinkModule registered successfully!")
         } catch (e: Exception) {
@@ -110,7 +124,10 @@ class MainApplication : Application() {
         }
         // Register Local Storage module for persistent storage
         try {
-            LynxEnv.inst().registerModule("LocalStorageModule", com.hextok.localstorage.LocalStorageModule::class.java)
+            LynxEnv.inst().registerModule(
+                "LocalStorageModule",
+                com.hextok.localstorage.LocalStorageModule::class.java
+            )
         } catch (e: Exception) {
             // ignore
         }
@@ -123,33 +140,53 @@ class MainApplication : Application() {
         // Register custom elements (behaviors)
         try {
             LynxEnv.inst().addBehavior(object : com.lynx.tasm.behavior.Behavior("explorer-input") {
-                override fun createUI(context: com.lynx.tasm.behavior.LynxContext) = com.hextok.custom.LynxExplorerInput(context)
+                override fun createUI(context: com.lynx.tasm.behavior.LynxContext) =
+                    com.hextok.custom.LynxExplorerInput(context)
             })
-        } catch (e: Exception) { }
+        } catch (e: Exception) {
+        }
 
         try {
             LynxEnv.inst().addBehavior(object : com.lynx.tasm.behavior.Behavior("media-player") {
-                override fun createUI(context: com.lynx.tasm.behavior.LynxContext) = com.hextok.custom.LynxMediaPlayer(context)
+                override fun createUI(context: com.lynx.tasm.behavior.LynxContext) =
+                    com.hextok.custom.LynxMediaPlayer(context)
             })
-        } catch (e: Exception) { }
+        } catch (e: Exception) {
+        }
+
+        // Register the new video element behavior
+        try {
+            LynxEnv.inst().addBehavior(object : Behavior("video") {
+                override fun createUI(context: LynxContext): LynxVideo {
+                    return LynxVideo(context)
+                }
+
+
+            })
+        } catch (e: Exception) {
+        }
 
         try {
             LynxEnv.inst().addBehavior(object : com.lynx.tasm.behavior.Behavior("chart-view") {
-                override fun createUI(context: com.lynx.tasm.behavior.LynxContext) = com.hextok.custom.LynxChartView(context)
+                override fun createUI(context: com.lynx.tasm.behavior.LynxContext) =
+                    com.hextok.custom.LynxChartView(context)
             })
-        } catch (e: Exception) { }
+        } catch (e: Exception) {
+        }
         try {
             LynxEnv.inst().addBehavior(object : com.lynx.tasm.behavior.Behavior("button") {
-                override fun createUI(context: com.lynx.tasm.behavior.LynxContext) = com.hextok.custom.LynxButton(context)
+                override fun createUI(context: com.lynx.tasm.behavior.LynxContext) =
+                    com.hextok.custom.LynxButton(context)
             })
-        } catch (e: Exception) { }
+        } catch (e: Exception) {
+        }
         try {
-		com.hextok.lynxlinking.LynxLinkingAdapter().init(this)
-	} catch (e: Exception) {
-		// handle or log
-	}
+            com.hextok.lynxlinking.LynxLinkingAdapter().init(this)
+        } catch (e: Exception) {
+            // handle or log
+        }
     }
-    
+
     override fun onTerminate() {
         super.onTerminate()
     }
